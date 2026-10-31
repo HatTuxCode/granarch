@@ -94,9 +94,15 @@ def install_zen(home, old):
 
 
 def install_yaru(home, old):
-    tags = api('https://api.github.com/repos/ubuntu/yaru/tags?per_page=1')
-    tag = tags[0]['name']
-    commit = tags[0]['commit']['sha']
+    tags = api('https://api.github.com/repos/ubuntu/yaru/tags?per_page=100')
+    # GitHub tag order also includes legacy named tags (for example bionic).
+    versions = [item for item in tags
+                if re.fullmatch(r'\d{2}\.\d{2}(?:\.\d+)*', item['name'])]
+    if not versions:
+        raise RuntimeError('No supported numbered Yaru release found')
+    release = max(versions, key=lambda item: tuple(map(int, item['name'].split('.'))))
+    tag = release['name']
+    commit = release['commit']['sha']
     if not re.fullmatch(r'[a-f0-9]{40}', commit):
         raise RuntimeError('Invalid Yaru commit')
     if old.get('commit') == commit and (home / '.local/share/icons/Yaru-blue').is_dir():
