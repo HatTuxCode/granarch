@@ -1,0 +1,60 @@
+{
+  "hyprland": {
+    "upstream": "https://github.com/hyprwm/Hyprland",
+    "delivery": "extra/hyprland",
+    "docs": "https://wiki.hypr.land/Getting-Started/Installation/"
+  },
+  "quickshell": {
+    "upstream": "https://git.outfoxxed.me/quickshell/quickshell",
+    "delivery": "extra/quickshell",
+    "docs": "https://quickshell.org/docs/v0.3.2/guide/install-setup/"
+  },
+  "kitty": {
+    "upstream": "https://github.com/kovidgoyal/kitty",
+    "delivery": "extra/kitty"
+  },
+  "fish": {
+    "upstream": "https://github.com/fish-shell/fish-shell",
+    "delivery": "extra/fish"
+  },
+  "mise": {
+    "upstream": "https://github.com/jdx/mise",
+    "delivery": "extra/mise"
+  },
+  "zen": {
+    "upstream": "https://github.com/zen-browser/desktop",
+    "delivery": "upstream-release",
+    "checksum": "SHA-256 from GitHub asset digest or upstream release notes"
+  },
+  "yaru": {
+    "upstream": "https://github.com/ubuntu/yaru",
+    "delivery": "upstream-source",
+    "revision": "resolved commit from upstream tags"
+  },
+  "codex": {
+    "upstream": "https://github.com/openai/codex",
+    "delivery": "mise npm:@openai/codex"
+  },
+  "opencode": {
+    "upstream": "https://github.com/anomalyco/opencode",
+    "delivery": "mise npm:opencode-ai"
+  },
+  "sddm": {
+    "upstream": "https://github.com/sddm/sddm",
+    "delivery": "extra/sddm"
+  },
+  "plymouth": {
+    "upstream": "https://gitlab.freedesktop.org/plymouth/plymouth",
+    "delivery": "extra/plymouth"
+  },
+  "asusctl": {
+    "upstream": "https://gitlab.com/asus-linux/asusctl",
+    "delivery": "extra/asusctl",
+    "condition": "ASUS hardware"
+  },
+  "thermald": {
+    "upstream": "https://github.com/intel/thermal_daemon",
+    "delivery": "extra/thermald",
+    "condition": "Intel CPU"
+  }
+}

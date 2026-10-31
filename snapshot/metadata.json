@@ -1,0 +1,69 @@
+{
+  "captured_at": "2026-10-30T23:28:44.505237+00:00",
+  "theme": "nord",
+  "namespace": "gran",
+  "requires": {
+    "hyprland": "0.57.0",
+    "quickshell": "0.3.2"
+  },
+  "binding_sources": [
+    {
+      "module": "bindings.lua",
+      "source_sha256": "af0da7e033aeb18f27a77aef3a5776be96f32c14cf54a03d5a0b8e9a9ae1ec39",
+      "gran_sha256": "95d3e7565ec901f7f161db81313ea0e155ef4a62353c55bd8cf8a624b800bc4f"
+    },
+    {
+      "module": "applications.lua",
+      "source_sha256": "199d79e74319ca968acadb85fa5d2d29790d51df084fe32c43d39e58cdbca0ad",
+      "gran_sha256": "738fc2f5e24fa9c2e8ffe900c5936732eb79b015280b36e6697e581ca7fca900"
+    },
+    {
+      "module": "clipboard.lua",
+      "source_sha256": "7ffb24950d24308dfc8ec09e5aa908aa157f7c1c1a7779095b6d24b02bacb41c",
+      "gran_sha256": "2e0260f0f8949a3ffdb9062a0b77e6fdee08b4deb3ab51dc347a242b24928622"
+    },
+    {
+      "module": "dictation.lua",
+      "source_sha256": "74c482563def60100ee8630796c9fd3c301609d2678a86efe71059ac0b240801",
+      "gran_sha256": "3f95a69c641c3a579510e8369a603c48373f21642fd819276e0757ac28106aba"
+    },
+    {
+      "module": "input-method.lua",
+      "source_sha256": "7c749ba1cb0e6863cbd012095887cab2bb4f09cef30c819f5f4980a11c52de71",
+      "gran_sha256": "0ff19d414f2e724015067ba062a24bd85fd47c3f4aee3c5c7e707b0b6359acec"
+    },
+    {
+      "module": "jis.lua",
+      "source_sha256": "0e31c955ea2703b8a6f731ba2911065c3bbb0eec2244706d9cded221e6f95043",
+      "gran_sha256": "0e31c955ea2703b8a6f731ba2911065c3bbb0eec2244706d9cded221e6f95043"
+    },
+    {
+      "module": "media.lua",
+      "source_sha256": "72fc254679527a31c8b5440854e70ae9dd13014030239df972c4d732b650fc91",
+      "gran_sha256": "e2aa504f3606585a09e5b486daff1f5ccc82a0b993666b7762bf30928bc73917"
+    },
+    {
+      "module": "tiling.lua",
+      "source_sha256": "8cb2f7cd4abc69affc9cdf70da28c32f9f621ae100eabb40e68e95b8916759e2",
+      "gran_sha256": "7a501781a4c1cddb24d6db082cdd3812e9cc00fdadd81f18f108345e55338245"
+    },
+    {
+      "module": "utilities.lua",
+      "source_sha256": "db1925b98af952ac8a1251abc3b52ad97716e4647a58f6a6c9291ae1f91c5b35",
+      "gran_sha256": "21ae21e175c0fe5581b4f9d114959830f56a3e354b5f11de83ac21d14c2ed890"
+    }
+  ],
+  "relocated_files": 3,
+  "excluded": [
+    "repository keys/configs",
+    "distribution installers/migrations",
+    "credentials",
+    "browser profiles",
+    "SSH/GPG keys",
+    "fish_variables",
+    "clipboard history",
+    "notifications",
+    "plugin git history",
+    "camera models"
+  ]
+}

@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# gran:summary=Toggle notification do-not-disturb mode
+
+state=$(gran-shell notifications toggleDnd 2>/dev/null || echo "")
+gran-shell -q gran.indicators refresh

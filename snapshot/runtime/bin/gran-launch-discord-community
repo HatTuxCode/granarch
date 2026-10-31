@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# gran:summary=Open the Gran Discord community in the Discord app or a browser.
+
+invite="https://discord.gg/tXFUdasqhY"
+
+if gran-cmd-present discord; then
+  exec setsid uwsm-app -- discord --url -- "discord://-/invite/${invite##*/}"
+else
+  exec gran-launch-webapp "$invite"
+fi

@@ -1,0 +1,11 @@
+[Unit]
+Description=Watch for media playback to keep the screen awake
+
+[Timer]
+OnBootSec=30
+OnUnitActiveSec=2
+AccuracySec=1
+Persistent=false
+
+[Install]
+WantedBy=timers.target

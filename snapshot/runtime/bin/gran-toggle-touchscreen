@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# gran:summary=Enable, disable, or toggle the touch functionality of the screen
+# gran:args=[on|off|toggle]
+
+exec gran-toggle-input-device touchscreen "${1:-toggle}"

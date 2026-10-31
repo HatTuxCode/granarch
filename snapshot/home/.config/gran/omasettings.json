@@ -1,0 +1,24 @@
+{
+  "monitors": {},
+  "monitorsSchema": 3,
+  "extras": {
+    "opaque-windows": "true"
+  },
+  "hypr": {
+    "inactive-opacity": 0.89,
+    "gaps-out": 3,
+    "float-gaps": 1,
+    "sensitivity": 0.16
+  },
+  "hyprOriginal": {
+    "inactive-opacity": 1,
+    "gaps-out": 1,
+    "float-gaps": 0,
+    "sensitivity": 0
+  },
+  "devices": {
+    "asue140a:00-04f3:3134-touchpad": {
+      "sensitivity": 0.2
+    }
+  }
+}

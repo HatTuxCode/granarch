@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "hattux.sysinfo",
+  "name": "SysInfo",
+  "version": "1.0.0",
+  "author": "hattux",
+  "description": "Leve medidor de CPU, temperatura e RAM, sem painel e sem subprocessos",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "SysInfo",
+    "description": "CPU, temperatura e RAM no hover",
+    "category": "System",
+    "allowMultiple": false,
+    "defaultSection": "right"
+  }
+}

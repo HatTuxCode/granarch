@@ -1,0 +1,23 @@
+#!/bin/bash
+
+# gran:summary=Persist the keyboard backlight level whenever it is manually set (non-zero)
+
+set -u
+
+DEVICE="asus::kbd_backlight"
+DEFAULT_FILE="$HOME/.local/state/gran/indicators/kbd-backlight-default"
+
+mkdir -p "$(dirname "$DEFAULT_FILE")"
+
+last="$(brightnessctl -d "$DEVICE" get 2>/dev/null || echo 0)"
+
+while true; do
+  cur="$(brightnessctl -d "$DEVICE" get 2>/dev/null || echo 0)"
+  if [[ "$cur" != "$last" ]]; then
+    if [[ "$cur" -gt 0 ]]; then
+      printf '%s\n' "$cur" > "$DEFAULT_FILE"
+    fi
+    last="$cur"
+  fi
+  sleep 1
+done

@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# gran:summary=Read the chosen weather location without automatic geolocation
+# gran:args=[--json]
+set -euo pipefail
+location="$HOME/.local/state/gran/settings/weather.json"
+if [[ ${1:-} == --json ]]; then
+  if [[ -f $location ]]; then cat "$location"; else printf '{}\n'; fi
+else
+  [[ ! -f $location ]] || jq -r '.name // empty' "$location"
+fi

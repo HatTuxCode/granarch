@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# gran:summary=Toggle suspend availability in the system menu
+
+if gran-sleep-disabled; then
+  gran-notification-send -g 󰒲 "$(gran-i18n suspend.turnedOffOnMachine)"
+  exit 0
+fi
+
+gran-toggle suspend-off
+
+if gran-toggle-enabled suspend-off; then
+  gran-notification-send -g 󰒲 "$(gran-i18n suspend.removedFromMenu)"
+else
+  gran-notification-send -g 󰒲 "$(gran-i18n suspend.availableInMenu)"
+fi

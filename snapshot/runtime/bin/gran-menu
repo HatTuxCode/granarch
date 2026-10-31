@@ -1,0 +1,52 @@
+#!/bin/bash
+
+# gran:summary=Control the Gran menu (toggle / summon / close / refresh)
+# gran:args=[toggle|summon|close|refresh|ping] [route]
+# gran:examples=gran menu | gran menu toggle system | gran menu summon appearance.theme | gran menu refresh
+
+# Thin wrapper around the standard plugin IPC surface. The menu is the
+# first-party `gran.menu` plugin; routes are passed as JSON payload.
+
+set -euo pipefail
+
+verb="${1-toggle}"
+route="${2-root}"
+
+menu_payload() {
+  jq -nc --arg menu "$1" '{ menu: $menu }'
+}
+
+case "$verb" in
+  toggle)
+    exec gran-shell shell toggle gran.menu "$(menu_payload "$route")"
+    ;;
+  summon)
+    exec gran-shell shell summon gran.menu "$(menu_payload "$route")"
+    ;;
+  close)
+    exec gran-shell shell hide gran.menu
+    ;;
+  refresh | ping)
+    exec gran-shell shell call gran.menu "$verb" "{}"
+    ;;
+  -h | --help | help)
+    cat <<USAGE
+Usage: gran menu [verb] [route]
+
+Verbs:
+  toggle [route]   Open the menu at <route>, or close it if already open. Default verb.
+  summon [route]   Always open the menu (no close-if-visible toggle).
+  close            Close the menu if it is visible.
+  refresh          Re-parse the menu JSONC files.
+  ping             Health check.
+
+Route is an item id (e.g. setup.power) or alias (e.g. power). Defaults to
+"root", which opens the top-level menu.
+USAGE
+    exit 0
+    ;;
+  *)
+    echo "gran-menu: unknown verb '$verb'. Try 'gran menu --help'." >&2
+    exit 2
+    ;;
+esac

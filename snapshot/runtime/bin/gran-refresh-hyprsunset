@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# gran:summary=Overwrite the user config for hyprsunset with the Gran default and restart the service.
+
+gran-refresh-config hypr/hyprsunset.conf
+gran-restart-hyprsunset

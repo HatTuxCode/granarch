@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# gran:summary=Overwrite all the user Hyprland Lua configs in ~/.config/hypr with the Gran defaults.
+
+gran-refresh-config hypr/.luarc.json
+gran-refresh-config hypr/autostart.lua
+gran-refresh-config hypr/bindings.lua
+gran-refresh-config hypr/input.lua
+gran-refresh-config hypr/looknfeel.lua
+gran-refresh-config hypr/hyprland.lua
+gran-refresh-config hypr/monitors.lua
+
+mkdir -p ~/.local/state/gran/toggles/hypr
+cp "$GRAN_PATH/default/hypr/toggles/flags.lua" ~/.local/state/gran/toggles/hypr/

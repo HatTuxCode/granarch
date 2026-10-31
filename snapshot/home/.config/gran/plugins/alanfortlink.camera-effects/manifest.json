@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": "alanfortlink.camera-effects",
+  "name": "Camera Effects",
+  "version": "0.4.0",
+  "author": "alanfortlink",
+  "license": "MIT",
+  "description": "System-wide camera and microphone effects (Center Stage, Portrait, Studio Light, Backgrounds, Filters, Fun face filters, Reactions, Block camera; Voice Isolation, noise gate, auto level, tone, voice changer, reverb, mute) exposed as the \"Camera Effects\" virtual webcam and the \"Microphone Effects\" virtual microphone, with a Control-Center-style panel in the bar.",
+  "kinds": [
+    "service",
+    "bar-widget"
+  ],
+  "keepLoaded": true,
+  "entryPoints": {
+    "service": "plugin/Service.qml",
+    "barWidget": "plugin/Panel.qml"
+  },
+  "barWidget": {
+    "displayName": "Camera Effects",
+    "description": "Camera and microphone effects panel with live preview; the icon lights up while an app is using the camera.",
+    "category": "Media",
+    "allowMultiple": false,
+    "defaultSection": "right",
+    "defaults": {
+      "alwaysShow": true
+    },
+    "schema": [
+      {
+        "key": "alwaysShow",
+        "type": "boolean",
+        "label": "Show icon even when no app is using the camera",
+        "defaultValue": true
+      }
+    ]
+  }
+}

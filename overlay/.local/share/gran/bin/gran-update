@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# gran:summary=Update Arch packages and tools from their own upstream sources
+# gran:args=[--check]
+set -euo pipefail
+if [[ ${1:-} == --check ]]; then
+  exec checkupdates
+fi
+[[ $# == 0 ]] || { echo 'Usage: gran update [--check]' >&2; exit 2; }
+[[ $EUID -ne 0 ]] || { echo 'Execute como usuário comum.' >&2; exit 1; }
+# This project never adds repository sections, keyrings or mirrorlists.
+if pacman-conf | grep -Eqi 'omarchy\.(org|cn)|^\[omarchy\]'; then
+  echo 'Remova a configuração do repositório Omarchy antes de atualizar com Gran.' >&2
+  exit 1
+fi
+sudo pacman -Syu
+mise upgrade node npm:@openai/codex npm:opencode-ai
+gran app update installed
+printf 'Gran atualizado. O desktop é mantido pelo projeto GranArch.\n'

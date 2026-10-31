@@ -1,0 +1,115 @@
+#!/usr/bin/env python3
+# gran:summary=Apply the current Gran palette to GTK, Qt and Zen integrations
+# gran:args=[--quiet]
+"""Generate shared toolkit colors without changing application content."""
+import argparse
+from datetime import datetime, timezone
+import json
+import os
+from pathlib import Path
+import re
+import shutil
+import subprocess
+import sys
+import tomllib
+
+
+def sync(home, configure_gsettings=True):
+    palette = tomllib.loads((home / '.local/state/gran/current/theme/colors.toml').read_text())
+    def color(name):
+        value = palette[name]
+        if not re.fullmatch(r'#[0-9a-fA-F]{6}', value):
+            raise ValueError(f'Invalid palette color: {name}')
+        return value
+    bg, fg, accent = (color(name) for name in ('background', 'foreground', 'accent'))
+    raised, dark, muted = (color(name) for name in ('lighter_background', 'dark_background', 'light_foreground'))
+    selection = color('selection')
+    named = {
+        'theme_bg_color': bg, 'theme_fg_color': fg, 'theme_base_color': bg,
+        'theme_text_color': fg, 'theme_selected_bg_color': accent, 'theme_selected_fg_color': bg,
+        'theme_unfocused_bg_color': bg, 'theme_unfocused_fg_color': muted,
+        'theme_unfocused_base_color': bg, 'theme_unfocused_text_color': muted,
+        'theme_unfocused_selected_bg_color': selection, 'theme_unfocused_selected_fg_color': fg,
+        'borders': raised, 'unfocused_borders': raised,
+        'window_bg_color': bg, 'window_fg_color': fg, 'view_bg_color': bg, 'view_fg_color': fg,
+        'accent_bg_color': accent, 'accent_fg_color': bg, 'accent_color': accent,
+        'headerbar_bg_color': dark, 'headerbar_fg_color': fg,
+        'popover_bg_color': raised, 'popover_fg_color': fg,
+        'card_bg_color': raised, 'card_fg_color': fg,
+        'sidebar_bg_color': dark, 'sidebar_fg_color': fg,
+        'warning_color': color('yellow'), 'error_color': color('red'), 'success_color': color('green'),
+    }
+    header = '/* Generated from the current Gran palette. */\n'
+    definitions = ''.join(f'@define-color {name} {value};\n' for name, value in named.items())
+    gtk3 = header + definitions + f'''
+window, dialog, .background {{ background-color: {bg}; color: {fg}; }}
+headerbar, .titlebar {{ background-color: {dark}; color: {fg}; }}
+entry, textview, treeview, viewport {{ background-color: {bg}; color: {fg}; }}
+popover, menu {{ background-color: {raised}; color: {fg}; }}
+button {{ color: {fg}; }}
+selection, :selected {{ background-color: {accent}; color: {bg}; }}
+'''
+    variables = {name.replace('_', '-'): value for name, value in named.items() if not name.startswith('theme_')}
+    variables.update({'headerbar-backdrop-color': dark, 'headerbar-border-color': fg,
+                      'dialog-bg-color': bg, 'dialog-fg-color': fg,
+                      'thumbnail-bg-color': raised, 'thumbnail-fg-color': fg,
+                      'secondary-sidebar-bg-color': dark, 'secondary-sidebar-fg-color': fg})
+    gtk4 = header + definitions + ':root {\n' + ''.join(
+        f'  --{name}: {value};\n' for name, value in variables.items()) + '}\n'
+    backup = home / '.local/state/gran/theme-backups' / datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S.%fZ')
+    changed = []
+    def write(relative, value):
+        path = home / relative
+        if path.exists() and path.read_text() == value:
+            return
+        if path.exists():
+            previous = backup / relative
+            previous.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(path, previous)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(value)
+        changed.append(relative)
+    for version, css in (('3.0', gtk3), ('4.0', gtk4)):
+        write(f'.config/gtk-{version}/gran-colors.css', css)
+        entry = f'.config/gtk-{version}/gtk.css'
+        path = home / entry
+        value = path.read_text() if path.exists() else ''
+        line = '@import url("gran-colors.css");'
+        if line not in value:
+            write(entry, line + '\n' + value)
+    settings = f'''[Settings]
+gtk-theme-name=Adwaita-dark
+gtk-icon-theme-name=Yaru-blue
+gtk-cursor-theme-name=Yaru
+gtk-application-prefer-dark-theme=true
+'''
+    # Managed preferences are installed once; palette changes use imported CSS.
+    for version in ('3.0', '4.0'):
+        path = home / f'.config/gtk-{version}/settings.ini'
+        if not path.exists():
+            write(f'.config/gtk-{version}/settings.ini', settings)
+    if configure_gsettings and os.environ.get('DBUS_SESSION_BUS_ADDRESS'):
+        for key, value in (('color-scheme', 'prefer-dark'), ('gtk-theme', 'Adwaita-dark')):
+            subprocess.run(['gsettings', 'set', 'org.gnome.desktop.interface', key, value], check=True)
+    script = home / '.config/gran/scripts/sync-nautilus-zen.py'
+    if script.exists():
+        env = os.environ.copy()
+        env['HOME'] = str(home)
+        for ini in (home / '.config/zen/profiles.ini', home / '.zen/profiles.ini'):
+            if ini.exists():
+                env['GRAN_ZEN_INI'] = str(ini)
+                subprocess.run([sys.executable, str(script)], env=env, check=True, capture_output=True)
+    return changed
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--quiet', action='store_true')
+    args = parser.parse_args()
+    changed = sync(Path.home())
+    if not args.quiet:
+        print(f'Gran palette applied; {len(changed)} toolkit file(s) updated.')
+
+
+if __name__ == '__main__':
+    main()

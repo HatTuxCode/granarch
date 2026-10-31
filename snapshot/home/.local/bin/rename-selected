@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+CLASS="$(hyprctl activewindow | awk -F': ' '/class:/{print $2; exit}')"
+
+case "$CLASS" in
+  org.gnome.Nautilus) ;;
+  *) exit 0 ;;
+esac
+
+wtype -k F2

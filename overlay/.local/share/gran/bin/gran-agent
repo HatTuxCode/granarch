@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# gran:summary=Launch the chosen agent using its normal permission defaults
+set -euo pipefail
+inline=0
+prompt=''
+while (( $# )); do
+  case "$1" in
+    --inline) inline=1; shift ;;
+    --pick) exec gran-launch-floating-terminal-with-presentation 'gran setup default-agent' ;;
+    --prompt) prompt=${2:?Informe o prompt}; shift 2 ;;
+    *) break ;;
+  esac
+done
+agent=$(cat "$HOME/.config/gran/defaults/agent" 2>/dev/null || printf codex)
+[[ $agent =~ ^[a-zA-Z0-9._+-]+$ ]] && command -v "$agent" >/dev/null || {
+  echo 'Escolha um agente instalado em Setup > Defaults > Agent.' >&2; exit 1;
+}
+command=("$agent")
+if [[ -n $prompt ]]; then
+  if [[ $agent == opencode ]]; then command+=(--prompt "$prompt"); else command+=("$prompt"); fi
+fi
+command+=("$@")
+if (( inline )); then exec "${command[@]}"; fi
+exec kitty --class org.gran.agent -e "${command[@]}"

@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# gran:summary=Adjust keyboard backlight and remember the result as the persistent default level
+
+set -euo pipefail
+
+STATE_DIR="$HOME/.local/state/gran/indicators"
+DEFAULT_FILE="$STATE_DIR/kbd-backlight-default"
+DEVICE="asus::kbd_backlight"
+SYSTEM_BIN="/usr/share/gran/bin/gran-brightness-keyboard"
+
+mkdir -p "$STATE_DIR"
+
+"$SYSTEM_BIN" "$@"
+
+level=$(brightnessctl -d "$DEVICE" get 2>/dev/null || echo 1)
+printf '%s\n' "$level" > "$DEFAULT_FILE"

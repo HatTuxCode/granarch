@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# gran:summary=Cycle to the next media source and transfer playback when the current source is playing
+# gran:args=[next|previous]
+# gran:examples=gran audio source switch | gran-audio-source-switch previous
+
+direction="${1:-next}"
+
+case "$direction" in
+  next)
+    gran-shell media sourceSwitch
+    ;;
+  previous)
+    gran-shell media sourceSwitchPrevious
+    ;;
+  *)
+    echo "Usage: gran-audio-source-switch [next|previous]" >&2
+    exit 1
+    ;;
+esac

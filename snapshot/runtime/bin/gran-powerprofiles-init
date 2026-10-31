@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# gran:summary=Set the correct power profile on boot based on current AC/battery state.
+
+exec gran-powerprofiles-set autodetect

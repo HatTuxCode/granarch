@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+export GRAN_PATH="${GRAN_PATH:-$HOME/.local/share/gran}"
+export PATH="$HOME/.local/bin:$HOME/.local/share/mise/shims:$GRAN_PATH/bin:$PATH"
+exec "$GRAN_PATH/bin/gran" "$@"

@@ -1,0 +1,26 @@
+#!/bin/bash
+
+# gran:summary=Record dictation with the configured backend
+# gran:args=<start|stop|toggle>
+# gran:examples=gran dictation start | gran dictation toggle
+
+if (($# != 1)) || [[ $1 != "start" && $1 != "stop" && $1 != "toggle" ]]; then
+  echo "Usage: gran dictation <start|stop|toggle>" >&2
+  exit 1
+fi
+
+config="${XDG_CONFIG_HOME:-$HOME/.config}/gran/defaults/dictation"
+mkdir -p "${config%/*}"
+exec 9> "$config.lock"
+if ! flock -w 5 9; then
+  echo "Dictation is busy; try again." >&2
+  exit 1
+fi
+
+backend=$(gran-default-dictation) || exit 1
+adapter="gran-dictation-$backend"
+if gran-cmd-missing "$adapter"; then
+  echo "The selected dictation backend ($backend) is not installed." >&2
+  exit 1
+fi
+"$adapter" "$1" 9>&-

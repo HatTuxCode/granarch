@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# gran:summary=Check whether all named Arch packages are installed
+(( $# )) || exit 1
+for name in "$@"; do pacman -Qq "$name" >/dev/null 2>&1 || exit 1; done

@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# gran:summary=Adaptive power profile: AC=performance, battery>25%=balanced, battery<=25%=power-saver
+
+set -euo pipefail
+
+ac_online=0
+battery_capacity=100
+
+if [[ -r /sys/class/power_supply/ADP1/online ]]; then
+  ac_online=$(</sys/class/power_supply/ADP1/online)
+fi
+
+if [[ -r /sys/class/power_supply/BAT0/capacity ]]; then
+  battery_capacity=$(</sys/class/power_supply/BAT0/capacity)
+fi
+
+# Always remember the battery profile so the UPower hook restores the right one.
+battery_profile=balanced
+if (( battery_capacity <= 25 )); then
+  battery_profile=power-saver
+fi
+gran-powerprofiles-set battery "$battery_profile"
+
+if (( ac_online == 1 )); then
+  gran-powerprofiles-set ac performance
+fi

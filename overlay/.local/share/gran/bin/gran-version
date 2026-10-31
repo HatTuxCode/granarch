@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# gran:summary=Show the installed Gran desktop version
+cat "$GRAN_PATH/version"

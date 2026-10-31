@@ -1,0 +1,260 @@
+{
+  "chromium": {
+    "label": "Chromium",
+    "category": "browser",
+    "packages": [
+      "extra/chromium"
+    ]
+  },
+  "firefox": {
+    "label": "Firefox",
+    "category": "browser",
+    "packages": [
+      "extra/firefox"
+    ]
+  },
+  "zen": {
+    "label": "Zen",
+    "category": "browser",
+    "delivery": "upstream"
+  },
+  "kitty": {
+    "label": "Kitty",
+    "category": "terminal",
+    "packages": [
+      "extra/kitty"
+    ]
+  },
+  "foot": {
+    "label": "Foot",
+    "category": "terminal",
+    "packages": [
+      "extra/foot"
+    ]
+  },
+  "alacritty": {
+    "label": "Alacritty",
+    "category": "terminal",
+    "packages": [
+      "extra/alacritty"
+    ]
+  },
+  "ghostty": {
+    "label": "Ghostty",
+    "category": "terminal",
+    "packages": [
+      "extra/ghostty"
+    ]
+  },
+  "nano": {
+    "label": "Nano",
+    "category": "editor",
+    "packages": [
+      "core/nano"
+    ]
+  },
+  "neovim": {
+    "label": "Neovim",
+    "category": "editor",
+    "packages": [
+      "extra/neovim"
+    ]
+  },
+  "vim": {
+    "label": "Vim",
+    "category": "editor",
+    "packages": [
+      "extra/vim"
+    ]
+  },
+  "helix": {
+    "label": "Helix",
+    "category": "editor",
+    "packages": [
+      "extra/helix"
+    ]
+  },
+  "code": {
+    "label": "Code",
+    "category": "editor",
+    "packages": [
+      "extra/code"
+    ]
+  },
+  "zed": {
+    "label": "Zed",
+    "category": "editor",
+    "packages": [
+      "extra/zed"
+    ]
+  },
+  "docker": {
+    "label": "Docker",
+    "category": "service",
+    "packages": [
+      "extra/docker"
+    ]
+  },
+  "podman": {
+    "label": "Podman",
+    "category": "service",
+    "packages": [
+      "extra/podman"
+    ]
+  },
+  "cups": {
+    "label": "CUPS",
+    "category": "service",
+    "packages": [
+      "extra/cups"
+    ]
+  },
+  "openssh": {
+    "label": "OpenSSH",
+    "category": "service",
+    "packages": [
+      "core/openssh"
+    ]
+  },
+  "flatpak": {
+    "label": "Flatpak",
+    "category": "service",
+    "packages": [
+      "extra/flatpak"
+    ]
+  },
+  "fprintd": {
+    "label": "Fingerprint",
+    "category": "service",
+    "packages": [
+      "extra/fprintd"
+    ]
+  },
+  "ttf-jetbrains-mono-nerd": {
+    "label": "JetBrains Mono Nerd",
+    "category": "font",
+    "packages": [
+      "extra/ttf-jetbrains-mono-nerd"
+    ]
+  },
+  "ttf-firacode-nerd": {
+    "label": "Fira Code Nerd",
+    "category": "font",
+    "packages": [
+      "extra/ttf-firacode-nerd"
+    ]
+  },
+  "ttf-cascadia-mono-nerd": {
+    "label": "Cascadia Mono Nerd",
+    "category": "font",
+    "packages": [
+      "extra/ttf-cascadia-mono-nerd"
+    ]
+  },
+  "ttf-iosevka-nerd": {
+    "label": "Iosevka Nerd",
+    "category": "font",
+    "packages": [
+      "extra/ttf-iosevka-nerd"
+    ]
+  },
+  "retroarch": {
+    "label": "RetroArch",
+    "category": "gaming",
+    "packages": [
+      "extra/retroarch"
+    ]
+  },
+  "lutris": {
+    "label": "Lutris",
+    "category": "gaming",
+    "packages": [
+      "extra/lutris"
+    ]
+  },
+  "steam": {
+    "label": "Steam (multilib)",
+    "category": "gaming",
+    "packages": [
+      "multilib/steam"
+    ]
+  },
+  "node": {
+    "label": "Node.js LTS",
+    "category": "development",
+    "delivery": "mise",
+    "tool": "node@lts"
+  },
+  "python": {
+    "label": "Python",
+    "category": "development",
+    "delivery": "mise",
+    "tool": "python@latest"
+  },
+  "go": {
+    "label": "Go",
+    "category": "development",
+    "delivery": "mise",
+    "tool": "go@latest"
+  },
+  "ruby": {
+    "label": "Ruby",
+    "category": "development",
+    "delivery": "mise",
+    "tool": "ruby@latest"
+  },
+  "rust": {
+    "label": "Rust",
+    "category": "development",
+    "delivery": "mise",
+    "tool": "rust@latest"
+  },
+  "java": {
+    "label": "Java",
+    "category": "development",
+    "delivery": "mise",
+    "tool": "java@latest"
+  },
+  "bun": {
+    "label": "Bun",
+    "category": "development",
+    "delivery": "mise",
+    "tool": "bun@latest"
+  },
+  "deno": {
+    "label": "Deno",
+    "category": "development",
+    "delivery": "mise",
+    "tool": "deno@latest"
+  },
+  "php": {
+    "label": "PHP",
+    "category": "development",
+    "delivery": "mise",
+    "tool": "php@latest"
+  },
+  "elixir": {
+    "label": "Elixir",
+    "category": "development",
+    "delivery": "mise",
+    "tool": "elixir@latest"
+  },
+  "zig": {
+    "label": "Zig",
+    "category": "development",
+    "delivery": "mise",
+    "tool": "zig@latest"
+  },
+  "codex": {
+    "label": "Codex CLI",
+    "category": "ai",
+    "delivery": "mise",
+    "tool": "npm:@openai/codex@latest"
+  },
+  "opencode": {
+    "label": "OpenCode",
+    "category": "ai",
+    "delivery": "mise",
+    "tool": "npm:opencode-ai@latest"
+  }
+}

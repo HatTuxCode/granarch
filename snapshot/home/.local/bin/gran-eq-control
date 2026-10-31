@@ -1,0 +1,233 @@
+#!/usr/bin/env bash
+# gran-eq-control: Controle em tempo real do equalizador gran-eq
+# Sem reiniciar o PipeWire — os ganhos mudam instantaneamente e sem estalos.
+#
+# Uso:
+#   gran-eq-control read            -> mostra os ganhos atuais (0 0 0 0 0)
+#   gran-eq-control set <b> <lm> <m> <p> <t>   -> define os ganhos em tempo real
+#   gran-eq-control persist <b> <lm> <m> <p> <t> -> define e grava no config (sobrevive a restart)
+#   gran-eq-control state           -> on se o EQ Ã© o sink padrÃ£o, off caso contrÃ¡rio
+#   gran-eq-control enable          -> ativa o EQ como sink padrÃ£o (move os streams)
+#   gran-eq-control disable         -> desativa, devolvendo o audio ao sink fÃ­sico
+#
+# Bandas: bass lowmid mid presence treble (valores -12 a +12 dB)
+
+set -euo pipefail
+
+CONF_FILE="${HOME}/.config/pipewire/pipewire.conf.d/gran-eq.conf"
+EQ_NODE_NAME="gran.equalizer"
+STATEDIR="${XDG_STATE_HOME:-${HOME}/.local/state}/gran-eq-control"
+DEFAULT_STORE="$STATEDIR/prev-sink"
+
+# Resolve o id de um node PipeWire pelo nome (robusto a reordenamento de ids)
+node_id_by_name() {
+    local name=$1
+    pw-dump 2>/dev/null | python3 -c "
+import json, sys
+try:
+    data = json.load(sys.stdin)
+except Exception:
+    sys.exit(1)
+for node in data:
+    props = node.get('info', {}).get('props', {})
+    if props.get('node.name') == '$name':
+        print(node['id'])
+        sys.exit(0)
+sys.exit(1)
+" 2>/dev/null || true
+}
+
+eq_node_id() {
+    node_id_by_name "$EQ_NODE_NAME"
+}
+
+# Verdadeiro se o sink ainda existe (por nome)
+sink_exists() {
+    pactl list sinks short 2>/dev/null | awk '{print $2}' | grep -qx "$1"
+}
+
+# Sink fÃ­sico para o qual devolver o audio ao desativar o EQ
+physical_sink() {
+    local phys
+    phys="$(gran-audio-output-sink 2>/dev/null || true)"
+    if [[ -z "$phys" || "$phys" == "${EQ_NODE_NAME}"* ]]; then
+        phys="$(pactl list sinks short 2>/dev/null | awk '$2 !~ /^gran\./ {print $2; exit}')"
+    fi
+    printf '%s\n' "$phys"
+}
+
+# Lê os ganhos atuais do PipeWire em tempo real
+read_gains_pipewire() {
+    local id
+    id="$(eq_node_id)"
+    if [[ -z "$id" ]]; then
+        echo "0 0 0 0 0"
+        return
+    fi
+    pw-dump "$id" 2>/dev/null | python3 -c "
+import json, sys
+try:
+    data = json.load(sys.stdin)
+except Exception:
+    print('0 0 0 0 0'); sys.exit(0)
+target = None
+for node in data:
+    if node.get('id') == $id:
+        target = node
+        break
+if not target:
+    print('0 0 0 0 0'); sys.exit(0)
+for p in target.get('info', {}).get('params', {}).get('Props', []):
+    params = p.get('params', [])
+    g = {params[i]: params[i+1] for i in range(0, len(params), 2)}
+    if 'bass:Gain' in g:
+        print(g.get('bass:Gain', 0), g.get('lowmid:Gain', 0), g.get('mid:Gain', 0),
+              g.get('presence:Gain', 0), g.get('treble:Gain', 0))
+        sys.exit(0)
+print('0 0 0 0 0')
+" 2>/dev/null || echo "0 0 0 0 0"
+}
+
+clamp() {
+    python3 -c "
+v=float('$1'); mn=float('$2'); mx=float('$3')
+print(int(mn) if v<mn else int(mx) if v>mx else int(v))
+"
+}
+
+# Aplica um ganho em tempo real num node do equalizador
+set_gain() {
+    local id=$1 band=$2 value=$3
+    if [[ -z "$id" ]]; then
+        return 1
+    fi
+    pw-cli set-param "$id" Props "{ \"params\": [ \"${band}:Gain\", ${value} ] }" >/dev/null 2>&1
+}
+
+# Lê os ganhos persistidos no config (fallback quando o node ainda não existe)
+read_gains_config() {
+    if [[ ! -f "$CONF_FILE" ]]; then
+        echo "0 0 0 0 0"
+        return
+    fi
+    python3 -c "
+import json
+try:
+    with open('$CONF_FILE') as f:
+        data = json.load(f)
+    nodes = data['context.modules'][0]['args']['filter.graph']['nodes']
+    gains = {n['name']: n['control']['Gain'] for n in nodes}
+    print(gains.get('bass', 0), gains.get('lowmid', 0), gains.get('mid', 0),
+          gains.get('presence', 0), gains.get('treble', 0))
+except Exception:
+    print('0 0 0 0 0')
+" 2>/dev/null || echo "0 0 0 0 0"
+}
+
+# Grava os ganhos no arquivo de config (para sobreviver a restart do PipeWire)
+persist_gains() {
+    local bass=$1 lowmid=$2 mid=$3 presence=$4 treble=$5
+    if [[ ! -f "$CONF_FILE" ]]; then
+        return 1
+    fi
+    python3 -c "
+import json, re
+path = '$CONF_FILE'
+with open(path) as f:
+    content = f.read()
+data = json.loads(content)
+nodes = data['context.modules'][0]['args']['filter.graph']['nodes']
+gains = {'bass': $bass, 'lowmid': $lowmid, 'mid': $mid, 'presence': $presence, 'treble': $treble}
+for n in nodes:
+    if n.get('name') in gains:
+        n['control']['Gain'] = gains[n['name']]
+with open(path, 'w') as f:
+    json.dump(data, f, indent=2)
+    f.write('\n')
+"
+}
+
+# --- Main ---
+case "${1:-}" in
+    read)
+        read -r b l m p t <<< "$(read_gains_pipewire)"
+        if [[ "$b $l $m $p $t" == "0 0 0 0 0" && ! "$(eq_node_id)" ]]; then
+            read_gains_config
+        else
+            echo "$b $l $m $p $t"
+        fi
+        ;;
+    set)
+        if [[ $# -ne 6 ]]; then
+            echo "Uso: gran-eq-control set <bass> <lowmid> <mid> <presence> <treble>" >&2
+            exit 1
+        fi
+        id="$(eq_node_id)"
+        set_gain "$id" bass    "$(clamp "$2" -12 12)" || true
+        set_gain "$id" lowmid  "$(clamp "$3" -12 12)" || true
+        set_gain "$id" mid     "$(clamp "$4" -12 12)" || true
+        set_gain "$id" presence "$(clamp "$5" -12 12)" || true
+        set_gain "$id" treble  "$(clamp "$6" -12 12)" || true
+        ;;
+    persist)
+        if [[ $# -ne 6 ]]; then
+            echo "Uso: gran-eq-control persist <bass> <lowmid> <mid> <presence> <treble>" >&2
+            exit 1
+        fi
+        b=$(clamp "$2" -12 12); l=$(clamp "$3" -12 12); m=$(clamp "$4" -12 12)
+        p=$(clamp "$5" -12 12); t=$(clamp "$6" -12 12)
+        persist_gains "$b" "$l" "$m" "$p" "$t" || true
+        id="$(eq_node_id)"
+        set_gain "$id" bass "$b" || true
+        set_gain "$id" lowmid "$l" || true
+        set_gain "$id" mid "$m" || true
+        set_gain "$id" presence "$p" || true
+        set_gain "$id" treble "$t" || true
+        ;;
+    state)
+        if pactl get-default-sink 2>/dev/null | grep -q "^gran.equalizer"; then
+            echo on
+        else
+            echo off
+        fi
+        ;;
+    enable)
+        id="$(eq_node_id)"
+        if [[ -z "$id" ]]; then
+            echo "equalizer node nÃ£o encontrado" >&2
+            exit 1
+        fi
+        mkdir -p "$STATEDIR"
+        pactl get-default-sink 2>/dev/null > "$DEFAULT_STORE" || true
+        gran-audio-output-set-default "$id" "$EQ_NODE_NAME"
+        ;;
+    disable)
+        phys="$(physical_sink)"
+        if [[ -z "$phys" ]]; then
+            echo "nenhum sink fÃ­sico encontrado" >&2
+            exit 1
+        fi
+        if [[ -f "$DEFAULT_STORE" ]]; then
+            prev="$(cat "$DEFAULT_STORE" 2>/dev/null || true)"
+            if [[ -n "$prev" && "$prev" != gran.* && "$prev" != "$phys" ]] && sink_exists "$prev"; then
+                phys="$prev"
+            fi
+            rm -f "$DEFAULT_STORE"
+        fi
+        id="$(node_id_by_name "$phys")"
+        if [[ -z "$id" ]]; then
+            echo "node do sink $phys nÃ£o encontrado" >&2
+            exit 1
+        fi
+        gran-audio-output-set-default "$id" "$phys"
+        ;;
+    *)
+        read -r b l m p t <<< "$(read_gains_pipewire)"
+        if [[ "$b $l $m $p $t" == "0 0 0 0 0" ]]; then
+            read -r b l m p t <<< "$(read_gains_config)"
+        fi
+        echo "Equalizador (em tempo real):"
+        echo "  bass=$b  lowmid=$l  mid=$m  presence=$p  treble=$t"
+        echo "Uso: gran-eq-control read|set|persist [state|enable|disable]"
+        ;;
+esac

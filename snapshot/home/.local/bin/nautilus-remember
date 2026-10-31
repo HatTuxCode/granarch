@@ -1,0 +1,63 @@
+#!/usr/bin/python
+"""Remember Nautilus locations through its D-Bus properties."""
+import os
+import sys
+from pathlib import Path
+from urllib.parse import urlsplit, unquote
+from gi.repository import Gio, GLib
+
+STATE = Path(os.environ.get('XDG_STATE_HOME', str(Path.home() / '.local/state'))) / 'nautilus-remember/last-uri'
+IFACE = 'org.freedesktop.FileManager1'
+
+def remember(uris):
+    global previous
+    candidates = [uri for uri in uris if uri not in previous]
+    previous = list(uris)
+    if candidates:
+        uri = candidates[-1]
+        if urlsplit(uri).scheme in ('file', 'smb', 'sftp', 'ftp', 'dav', 'davs', 'mtp'):
+            STATE.parent.mkdir(parents=True, exist_ok=True)
+            temporary = STATE.with_suffix('.tmp')
+            temporary.write_text(uri)
+            temporary.replace(STATE)
+
+if '--watch' in sys.argv[1:]:
+    import fcntl
+    lock = open(Path(os.environ['XDG_RUNTIME_DIR']) / 'nautilus-remember.lock', 'w')
+    try:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        sys.exit(0)
+    previous = []
+    bus = Gio.bus_get_sync(Gio.BusType.SESSION, None)
+    def changed(connection, sender, path, interface, signal, params):
+        iface, properties, invalidated = params.unpack()
+        if iface == IFACE and 'OpenLocations' in properties:
+            remember(properties['OpenLocations'])
+    bus.signal_subscribe('org.gnome.Nautilus', 'org.freedesktop.DBus.Properties',
+                         'PropertiesChanged', '/org/freedesktop/FileManager1',
+                         IFACE, Gio.DBusSignalFlags.NONE, changed)
+    try:
+        result = bus.call_sync('org.gnome.Nautilus', '/org/freedesktop/FileManager1',
+            'org.freedesktop.DBus.Properties', 'Get', GLib.Variant('(ss)', (IFACE, 'OpenLocations')),
+            None, Gio.DBusCallFlags.NO_AUTO_START, 2000, None)
+        remember(result.unpack()[0])
+    except GLib.Error:
+        pass
+    GLib.MainLoop().run()
+else:
+    args = sys.argv[1:]
+    if not any(not arg.startswith('-') for arg in args):
+        try:
+            uri = STATE.read_text().strip()
+            parsed = urlsplit(uri)
+            if parsed.scheme and (parsed.scheme != 'file' or Path(unquote(parsed.path)).is_dir()):
+                args.append(uri)
+        except OSError:
+            pass
+    # Keep GTK's background-effect protocol from bypassing compositor blur.
+    disabled = os.environ.get('GDK_WAYLAND_DISABLE', '').split(',')
+    if 'ext_background_effect_manager_v1' not in disabled:
+        disabled.append('ext_background_effect_manager_v1')
+    os.environ['GDK_WAYLAND_DISABLE'] = ','.join(item for item in disabled if item)
+    os.execv('/usr/bin/nautilus', ['nautilus', *args])

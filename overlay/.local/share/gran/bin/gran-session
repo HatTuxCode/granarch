@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# gran:summary=Start the Gran Hyprland session
+set -euo pipefail
+export GRAN_PATH="${GRAN_PATH:-$HOME/.local/share/gran}"
+export PATH="$HOME/.local/bin:$HOME/.local/share/mise/shims:$GRAN_PATH/bin:$PATH"
+export TERMINAL=kitty
+exec uwsm start -g -1 -e -D Hyprland hyprland.desktop

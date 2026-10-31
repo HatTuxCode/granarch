@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# gran:summary=Show the current battery status notification
+
+gran-notification-send -g 󰁹 -u low "$(gran-battery-status)"

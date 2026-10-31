@@ -1,0 +1,32 @@
+#!/usr/bin/env python3
+# gran:summary=Show or select the shell interface language
+# gran:args=[code|list|locale [code]]
+import json
+import os
+from pathlib import Path
+import subprocess
+import sys
+
+registry = json.loads((Path(os.environ['GRAN_PATH']) / 'default/i18n/locales.json').read_text())
+language_file = Path.home() / '.config/gran/language'
+current = language_file.read_text().strip() if language_file.exists() else 'en'
+args = sys.argv[1:]
+if not args:
+    print(current if current in registry else 'en')
+elif args == ['list']:
+    for code, item in sorted(registry.items(), key=lambda pair: '' if pair[0] == 'en' else pair[1]['englishName']):
+        print(item['name'] + '\t' + code + '\t' + item['englishName'])
+elif args[0] == 'locale' and len(args) <= 2:
+    print(registry[args[1] if len(args) == 2 else current]['locale'])
+elif len(args) == 1 and args[0] in registry:
+    language_file.parent.mkdir(parents=True, exist_ok=True)
+    language_file.write_text(args[0] + '\n')
+    locale = registry[args[0]]['locale']
+    normalized = lambda value: ''.join(c for c in value.lower() if c.isalnum())
+    installed = subprocess.check_output(['locale', '-a'], text=True).splitlines()
+    if normalized(locale) in {normalized(value) for value in installed}:
+        path = Path.home() / '.config/uwsm/env.d/50-gran-language'
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text('export LANG=' + locale + '\n')
+else:
+    raise SystemExit('Usage: gran language [code|list|locale [code]]')

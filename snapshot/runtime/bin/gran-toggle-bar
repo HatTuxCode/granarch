@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# gran:summary=Toggle bar visibility without killing the Gran shell (on hides the bar, off shows it)
+# gran:args=[toggle|on|off]
+# gran:examples=gran toggle bar | gran toggle bar off | gran toggle bar on
+
+gran-toggle bar-off "${1:-toggle}"
+
+# The shell's watch on the toggles directory can miss flag changes that land in
+# quick succession, stranding the bar off screen until the shell restarts.
+# Nudge the bar to re-read the flag; quiet best-effort so the toggle still
+# works when the shell is not up.
+gran-shell -q gran.bar syncHidden

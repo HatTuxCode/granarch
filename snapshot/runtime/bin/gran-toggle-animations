@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# gran:summary=Toggle animations, blur and shadows, which are slow without a GPU
+# gran:args=[toggle|on|off]
+# gran:examples=gran toggle animations | gran toggle animations off | gran toggle animations on
+
+# The flag records animations being off, so on and off swap on the way through.
+case ${1:-toggle} in
+toggle) gran-hyprland-toggle no-animations toggle ;;
+on) gran-hyprland-toggle no-animations off ;;
+off) gran-hyprland-toggle no-animations on ;;
+*)
+  echo "Usage: gran-toggle-animations [toggle|on|off]" >&2
+  exit 1
+  ;;
+esac
+
+if gran-hyprland-toggle-enabled no-animations; then
+  gran-notification-send -g 󰗘 "$(gran-i18n animations.disabled)"
+else
+  gran-notification-send -g 󰗘 "$(gran-i18n animations.enabled)"
+fi

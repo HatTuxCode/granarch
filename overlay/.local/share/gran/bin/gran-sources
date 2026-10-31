@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# gran:summary=Show the upstream source and delivery method of each core program
+cat "$GRAN_PATH/sources.json"

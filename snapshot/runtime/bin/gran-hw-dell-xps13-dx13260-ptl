@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# gran:summary=Match the Dell XPS 13 DX13260 with an Intel Panther Lake GPU.
+
+gran-hw-match "DX13260" && gran-hw-intel-ptl

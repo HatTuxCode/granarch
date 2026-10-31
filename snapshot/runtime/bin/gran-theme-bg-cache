@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# gran:summary=Cache background switcher thumbnails for the current theme
+
+theme_name=$(cat "$HOME/.local/state/gran/current/theme.name" 2>/dev/null)
+
+gran-menu-images \
+  --cache-only \
+  "$HOME/.local/state/gran/current/theme/backgrounds" \
+  "$HOME/.config/gran/backgrounds/$theme_name"

@@ -1,0 +1,158 @@
+#!/usr/bin/env python3
+# gran:summary=Create, launch, list or remove user web application launchers
+# gran:args=[install [name url]|list|run id|remove [id]] [--browser chromium|zen]
+import argparse
+from datetime import datetime, timezone
+import hashlib
+import json
+import os
+from pathlib import Path
+import re
+import shutil
+import subprocess
+import sys
+from urllib.parse import urlsplit
+
+
+def entry_quote(value):
+    # Desktop Exec escaping is independent from shell escaping; no shell is invoked.
+    value = value.replace('%', '%%').replace('\\', '\\\\').replace('"', '\\"')
+    value = value.replace('`', '\\`').replace('$', '\\$')
+    return '"' + value.replace('\\', '\\\\') + '"'
+
+
+def validate(name, url, browser='chromium', icon='web-browser'):
+    if not name.strip() or any(char in name for char in ('/', '\\', '\n', '\r', '\0')):
+        raise ValueError('Use um nome simples, sem barras ou quebras de linha.')
+    if not re.match(r'^[a-zA-Z][a-zA-Z0-9+.-]*:', url):
+        url = 'https://' + url
+    parts = urlsplit(url)
+    if parts.scheme.lower() not in ('http', 'https') or not parts.hostname or parts.username or parts.password or re.search(r'\s', url):
+        raise ValueError('A URL deve ser http/https, sem espaços ou credenciais embutidas.')
+    if browser not in ('chromium', 'zen'):
+        raise ValueError('Navegador não suportado.')
+    if not re.fullmatch(r'[A-Za-z0-9._-]+', icon):
+        raise ValueError('Use o nome de um ícone do tema.')
+    return url
+
+
+def create(home, name, url, browser='chromium', icon='web-browser'):
+    url = validate(name, url, browser, icon)
+    slug = re.sub(r'[^a-z0-9]+', '-', name.lower()).strip('-')[:50] or 'app'
+    identity = slug + '-' + hashlib.sha256((name + '\0' + url).encode()).hexdigest()[:8]
+    directory = home / '.local/share/gran/webapps'
+    directory.mkdir(parents=True, exist_ok=True)
+    manifest = directory / (identity + '.json')
+    desktop = home / '.local/share/applications' / ('gran-webapp-' + identity + '.desktop')
+    if manifest.exists() or desktop.exists():
+        raise ValueError('Este web app já está instalado.')
+    desktop.parent.mkdir(parents=True, exist_ok=True)
+    launcher = home / '.local/share/gran/bin/gran-webapp'
+    text = f'''[Desktop Entry]
+Version=1.0
+Type=Application
+Name={name.strip()}
+Comment=Web App Gran
+Exec={entry_quote(str(launcher))} run {entry_quote(identity)}
+Icon={icon}
+Terminal=false
+Categories=Network;
+StartupWMClass=gran.webapp.{identity}
+X-Gran-WebApp=true
+'''
+    manifest.write_text(json.dumps({'id': identity, 'name': name.strip(), 'url': url,
+                                   'browser': browser, 'desktop': desktop.name}, ensure_ascii=False, indent=2) + '\n')
+    desktop.write_text(text)
+    return identity
+
+
+def records(home):
+    result = []
+    for path in sorted((home / '.local/share/gran/webapps').glob('*.json')):
+        item = json.loads(path.read_text())
+        if item.get('id') == path.stem:
+            result.append(item)
+    return result
+
+
+def record(home, identity):
+    if not re.fullmatch(r'[a-z0-9-]+', identity):
+        raise ValueError('Identificador inválido.')
+    return next(item for item in records(home) if item['id'] == identity)
+
+
+def launch(home, identity):
+    item = record(home, identity)
+    if item['browser'] == 'zen':
+        command = ['zen-browser', '--new-window', item['url']]
+    else:
+        profile = home / '.local/share/gran/webapps/profiles' / identity
+        command = ['chromium', '--app=' + item['url'], '--class=gran.webapp.' + identity,
+                   '--user-data-dir=' + str(profile)]
+    os.execvp(command[0], command)
+
+
+def remove(home, identity):
+    item = record(home, identity)
+    backup = home / '.local/state/gran/webapp-backups' / datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S.%fZ')
+    backup.mkdir(parents=True)
+    for path in (home / '.local/share/gran/webapps' / (identity + '.json'),
+                 home / '.local/share/applications' / ('gran-webapp-' + identity + '.desktop')):
+        if path.exists():
+            shutil.move(str(path), backup / path.name)
+    return item
+
+
+def ask(command):
+    return subprocess.check_output(command, text=True).strip()
+
+
+def main():
+    parser = argparse.ArgumentParser(description='Web Apps Gran')
+    parser.add_argument('action', nargs='?', default='install', choices=['install', 'list', 'run', 'remove'])
+    parser.add_argument('values', nargs='*')
+    parser.add_argument('--browser', choices=['chromium', 'zen'])
+    parser.add_argument('--yes', action='store_true', help='Use after the launcher has already confirmed removal')
+    args = parser.parse_args()
+    home = Path.home()
+    if args.action == 'list':
+        for item in records(home):
+            print(item['id'] + '\t' + item['name'] + '\t' + item['url'])
+    elif args.action == 'run':
+        if len(args.values) != 1:
+            parser.error('Informe o identificador do web app.')
+        launch(home, args.values[0])
+    elif args.action == 'remove':
+        if not records(home):
+            raise ValueError('Nenhum Web App Gran instalado.')
+        identity = args.values[0] if args.values else ask(['gum', 'choose', '--header', 'Remover Web App',
+            *[item['id'] for item in records(home)]])
+        item = record(home, identity)
+        if not args.yes:
+            subprocess.run(['gum', 'confirm', 'Remover o atalho de ' + item['name'] + '? O perfil será mantido.'], check=True)
+        remove(home, identity)
+    else:
+        name = args.values[0] if args.values else ask(['gum', 'input', '--header', 'Nome do Web App'])
+        url = args.values[1] if len(args.values) > 1 else ask(['gum', 'input', '--header', 'URL do Web App'])
+        browser = args.browser or ('zen' if ask(['gum', 'choose', '--header', 'Como abrir?',
+            'Chromium — janela independente de aplicativo', 'Zen — janela do navegador padrão']).startswith('Zen') else 'chromium')
+        url = validate(name, url, browser)
+        executable = 'zen-browser' if browser == 'zen' else 'chromium'
+        if not shutil.which(executable):
+            if browser == 'zen':
+                subprocess.run(['gran-app', 'install', 'zen'], check=True)
+            else:
+                subprocess.run(['gran-pkg-install', 'extra/chromium'], check=True)
+        identity = create(home, name, url, browser)
+        print('Web App instalado:', identity)
+        if shutil.which('update-desktop-database'):
+            subprocess.run(['update-desktop-database', str(home / '.local/share/applications')], check=True)
+
+
+if __name__ == '__main__':
+    try:
+        main()
+    except subprocess.CalledProcessError as error:
+        raise SystemExit(error.returncode)
+    except (ValueError, OSError, StopIteration) as error:
+        raise SystemExit(f'gran webapp: {error}')

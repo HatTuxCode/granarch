@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# gran:summary=Toggle single-window square aspect ratio.
+
+case $(gran-hyprland-toggle single-window-aspect-ratio) in
+  on) gran-notification-send -g  "$(gran-i18n window.squareOn)" ;;
+  off) gran-notification-send -g  "$(gran-i18n window.squareOff)" ;;
+esac

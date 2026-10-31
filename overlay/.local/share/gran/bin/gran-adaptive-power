@@ -1,0 +1,24 @@
+#!/usr/bin/env python3
+# gran:summary=Apply the notebook's AC, battery and low-battery power profiles
+import json
+from pathlib import Path
+import subprocess
+
+home = Path.home()
+policy = json.loads((home / '.config/gran/notebook.json').read_text())
+supplies = Path('/sys/class/power_supply')
+online = any(path.read_text().strip() == '1' for path in supplies.glob('*/online'))
+batteries = [int(path.read_text()) for path in supplies.glob('*/capacity')]
+capacity = min(batteries, default=100)
+if online:
+    profile = policy['ac_profile']
+elif capacity <= policy['low_battery_percent']:
+    profile = policy['low_battery_profile']
+else:
+    profile = policy['battery_profile']
+available = subprocess.check_output(['gran-powerprofiles-list'], text=True).splitlines()
+if profile not in available:
+    profile = 'balanced' if 'balanced' in available else next(iter(available), None)
+if profile:
+    subprocess.run(['powerprofilesctl', 'set', profile], check=True)
+    subprocess.run(['gran-shell', '-q', 'battery', 'refreshPowerProfile'], check=False)

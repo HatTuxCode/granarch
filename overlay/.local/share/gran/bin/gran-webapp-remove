@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# gran:summary=Remove a Gran web application shortcut while preserving its profile
+exec gran-webapp remove "$@"

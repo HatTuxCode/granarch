@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# gran:summary=Returns true when clamshell mode is active
+# gran:hidden=true
+
+# Clamshell = lid closed while driving one or more external monitors.
+gran-hw-laptop-closed && gran-hw-external-monitors

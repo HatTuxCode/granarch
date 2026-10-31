@@ -1,0 +1,10 @@
+[bar]
+# 90% opaco: a barra deixa o wallpaper aparecer e o blur do Hyprland
+# (layer_rule em ~/.config/hypr/looknfeel.lua) faz o vidro.
+background-alpha = 0.9
+
+[font]
+icon-small = 11
+
+[menu]
+background-alpha = 1

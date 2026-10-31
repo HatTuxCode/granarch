@@ -1,0 +1,118 @@
+{
+  "bar": {
+    "background": "opaque",
+    "centerAnchor": "gran.clock",
+    "id": "hattux.bar",
+    "layout": {
+      "center": [
+        {
+          "id": "gran.indicators"
+        },
+        {
+          "id": "gran.elsewhen",
+          "zones": "Araguaina|America/Araguaina, London|Europe/London, Dubai|Asia/Dubai, Tokyo|Asia/Tokyo, Los Angeles|America/Los_Angeles"
+        },
+        {
+          "format": "yyyy-MM-dd HH:mm",
+          "formatAlt": "d MMMM 'W'ww yyyy",
+          "id": "gran.clock",
+          "verticalFormat": "HH\n—\nmm"
+        },
+        {
+          "id": "gran.keyboard-layout"
+        },
+        {
+          "id": "gran.weather"
+        },
+        {
+          "id": "crmne.lyrics"
+        },
+        {
+          "id": "gran.system-update"
+        }
+      ],
+      "left": [
+        {
+          "id": "gran.menu"
+        },
+        {
+          "id": "tornikegomareli.spaces",
+          "showApps": "all"
+        },
+        {
+          "id": "gran.active-window"
+        }
+      ],
+      "right": [
+        {
+          "id": "gran.tray"
+        },
+        {
+          "id": "hattux.sysinfo"
+        },
+        {
+          "id": "alanfortlink.camera-effects"
+        },
+        {
+          "id": "gran.agents"
+        },
+        {
+          "id": "gran.bluetooth"
+        },
+        {
+          "id": "hattux.network"
+        },
+        {
+          "id": "io.github.bramvera.proton-vpn"
+        },
+        {
+          "id": "gran.audio"
+        },
+        {
+          "id": "hattux.eq"
+        },
+        {
+          "id": "gran.monitor"
+        },
+        {
+          "id": "gran.power"
+        },
+        {
+          "id": "jankeesvw.notification-center"
+        }
+      ],
+      "centerBegin": [],
+      "centerEnd": [],
+      "tray": []
+    },
+    "position": "top"
+  },
+  "cloneSourceRestores": [
+    "hattux.nightlight"
+  ],
+  "disabledPlugins": [
+    "gran.nightlight",
+    "gran.idle",
+    "hattux.media",
+    "gran.media"
+  ],
+  "idle": {
+    "lock": 1800,
+    "screensaver": 0
+  },
+  "plugins": [
+    {
+      "id": "hattux.kbd-backlight-idle"
+    },
+    {
+      "id": "hattux.nightlight"
+    },
+    {
+      "id": "hattux.battery-idle-dpms"
+    },
+    {
+      "id": "io.github.mtolhuys.fathom"
+    }
+  ],
+  "version": 1
+}

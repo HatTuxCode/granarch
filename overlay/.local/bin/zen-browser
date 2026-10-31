@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+set -euo pipefail
+profile="$HOME/.config/zen/gran.default"
+if [[ ! -e $HOME/.config/zen/profiles.ini && ! -e $HOME/.zen/profiles.ini ]]; then
+  mkdir -p "$profile"
+  touch "$profile/prefs.js" "$profile/.gran-managed"
+  cat > "$HOME/.config/zen/profiles.ini" <<'EOF'
+[General]
+StartWithLastProfile=1
+[Profile0]
+Name=Gran
+IsRelative=1
+Path=gran.default
+Default=1
+EOF
+fi
+gran-theme-sync --quiet || true
+for argument in "$@"; do
+  case "$argument" in --profile|-profile|-P|--ProfileManager) exec "$HOME/.local/share/gran/apps/zen/current/zen-bin" "$@" ;; esac
+done
+if [[ -f $profile/.gran-managed ]]; then
+  exec "$HOME/.local/share/gran/apps/zen/current/zen-bin" --profile "$profile" "$@"
+fi
+exec "$HOME/.local/share/gran/apps/zen/current/zen-bin" "$@"

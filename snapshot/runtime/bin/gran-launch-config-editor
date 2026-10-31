@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# gran:summary=Open a config file in the user's editor and surface a toast
+# gran:args=<path>
+# gran:examples=gran launch config-editor ~/.config/hypr/hyprland.lua
+
+path="${1-}"
+
+if [[ -z $path ]]; then
+  echo "Usage: gran-launch-config-editor <path>" >&2
+  exit 1
+fi
+
+gran-notification-send -u low "$(gran-i18n config.editing)" "$path"
+exec gran-launch-editor "$path"

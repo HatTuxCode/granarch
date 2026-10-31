@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# gran:summary=Choose installed packages to remove with pacman
+# gran:group=pkg
+exec python3 "$GRAN_PATH/lib/control.py" packages remove "$@"

@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# gran:summary=Install an optional app, browser, terminal or development tool
+# gran:args=<app|browser|terminal|development|editor|service|font|gaming|ai> [name]
+exec python3 "$GRAN_PATH/lib/control.py" install "$@"

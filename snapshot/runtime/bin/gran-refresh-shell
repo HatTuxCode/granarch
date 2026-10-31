@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# gran:summary=Reset shell.json to Gran defaults
+# gran:examples=gran refresh shell
+
+set -euo pipefail
+
+gran-refresh-config gran/shell.json
+gran-bar defaults
+
+gran-restart-shell

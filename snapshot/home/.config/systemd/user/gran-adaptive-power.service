@@ -1,0 +1,10 @@
+[Unit]
+Description=Adaptive power profile engine (AC/battery/eco threshold)
+After=graphical-session.target
+
+[Service]
+ExecStart=@@GRAN_HOME@@/.local/bin/gran-adaptive-power
+Restart=on-failure
+
+[Install]
+WantedBy=graphical-session.target

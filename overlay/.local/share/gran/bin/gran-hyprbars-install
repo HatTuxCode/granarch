@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# gran:summary=Build optional titlebars from Hyprland's official plugin repository
+# gran:group=plugin
+# gran:name=hyprbars install
+set -euo pipefail
+command -v hyprpm >/dev/null || {
+  echo 'Instale hyprpm e as ferramentas de compilação oficiais do Arch antes.' >&2
+  exit 1
+}
+hyprpm add https://github.com/hyprwm/hyprland-plugins
+hyprpm enable hyprbars
+hyprpm reload

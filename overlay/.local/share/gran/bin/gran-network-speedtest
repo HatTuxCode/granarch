@@ -1,0 +1,30 @@
+#!/usr/bin/env python3
+# gran:summary=Measure internet throughput with Cloudflare's public speed-test endpoints
+# gran:args=<down|up>
+import sys
+import time
+import urllib.request
+
+if len(sys.argv) != 2 or sys.argv[1] not in ('down', 'up'):
+    raise SystemExit('Usage: gran network speedtest <down|up>')
+direction = sys.argv[1]
+started = time.monotonic()
+transferred = 0
+try:
+    while time.monotonic() - started < 7 and transferred < 64 * 1024**2:
+        if direction == 'down':
+            request = urllib.request.Request('https://speed.cloudflare.com/__down?bytes=4194304')
+        else:
+            request = urllib.request.Request('https://speed.cloudflare.com/__up',
+                                             data=bytes(1024**2), method='POST')
+        with urllib.request.urlopen(request, timeout=5) as response:
+            if direction == 'up':
+                response.read(4096)
+                transferred += 1024**2
+            else:
+                while chunk := response.read(256 * 1024):
+                    transferred += len(chunk)
+                    print(f'{transferred * 8 / max(time.monotonic() - started, .001) / 1e6:.2f}', flush=True)
+        print(f'{transferred * 8 / max(time.monotonic() - started, .001) / 1e6:.2f}', flush=True)
+except OSError as error:
+    raise SystemExit(str(error))

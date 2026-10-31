@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# gran:summary=Toggle screensaver availability
+
+gran-toggle screensaver-off
+
+if gran-toggle-enabled screensaver-off; then
+  gran-notification-send -g 󱄄 "$(gran-i18n screensaver.disabled)"
+else
+  gran-notification-send -g 󱄄 "$(gran-i18n screensaver.enabled)"
+fi

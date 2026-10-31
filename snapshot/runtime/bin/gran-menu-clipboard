@@ -1,0 +1,6 @@
+#!/bin/bash
+# gran:summary=Launch the clipboard manager
+# gran:group=menu
+# gran:examples=gran menu clipboard
+
+gran-shell shell toggle gran.clipboard

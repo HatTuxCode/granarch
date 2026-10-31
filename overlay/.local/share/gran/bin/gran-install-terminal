@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# gran:summary=Install an optional terminal from Arch
+# gran:group=install
+exec python3 "$GRAN_PATH/lib/control.py" install terminal "$@"

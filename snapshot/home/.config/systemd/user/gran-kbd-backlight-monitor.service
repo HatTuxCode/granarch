@@ -1,0 +1,12 @@
+[Unit]
+Description=Persist keyboard backlight level changes (gran)
+After=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/gran-kbd-backlight-monitor
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=default.target

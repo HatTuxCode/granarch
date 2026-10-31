@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# gran:summary=Check installed desktop programs, configuration and the running session
+set -u
+failures=0
+check() {
+  if "$@"; then printf 'OK: %s\n' "$*"; else printf 'FALHOU: %s\n' "$*"; failures=$((failures + 1)); fi
+}
+for executable in Hyprland quickshell kitty fish mise zen-browser codex opencode; do
+  check command -v "$executable"
+done
+for file in "$HOME/.config/hypr/hyprland.lua" "$HOME/.config/gran/shell.json" \
+            "$HOME/.local/state/gran/current/background" /etc/pam.d/gran-lock-password; do
+  check test -f "$file"
+done
+check test "$(xdg-settings get default-web-browser)" = zen.desktop
+if [[ -n ${HYPRLAND_INSTANCE_SIGNATURE:-} ]]; then
+  errors=$(hyprctl configerrors 2>&1)
+  if [[ -z $errors || $errors == ok ]]; then echo 'OK: Hyprland sem erros'; else
+    printf 'FALHOU: %s\n' "$errors"; failures=$((failures + 1))
+  fi
+  check gran-shell shell ping
+else
+  echo 'A sessão gráfica ainda precisa ser validada: execute gran doctor dentro dela.'
+fi
+printf '%s falha(s).\n' "$failures"
+exit "$((failures > 0))"

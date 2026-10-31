@@ -1,0 +1,84 @@
+{
+  "version": 1,
+  "idle": {
+    "screensaver": 150,
+    "lock": 300
+  },
+  "bar": {
+    "position": "top",
+    "background": "opaque",
+    "layout": {
+      "left": [
+        {
+          "id": "gran.menu"
+        },
+        {
+          "id": "gran.workspaces"
+        }
+      ],
+      "centerBegin": [
+        {
+          "id": "gran.indicators"
+        }
+      ],
+      "center": [
+        {
+          "id": "gran.clock",
+          "format": "dddd HH:mm",
+          "formatAlt": "d MMMM 'W'ww yyyy",
+          "verticalFormat": "HH\n—\nmm"
+        }
+      ],
+      "centerEnd": [
+        {
+          "id": "gran.elsewhen"
+        },
+        {
+          "id": "gran.weather"
+        },
+        {
+          "id": "gran.system-update"
+        }
+      ],
+      "right": [
+        {
+          "id": "gran.tray"
+        },
+        {
+          "id": "gran.keyboard-layout"
+        },
+        {
+          "id": "gran.agents"
+        },
+        {
+          "id": "gran.bluetooth"
+        },
+        {
+          "id": "gran.network"
+        },
+        {
+          "id": "gran.audio"
+        },
+        {
+          "id": "gran.monitor"
+        },
+        {
+          "id": "gran.power"
+        }
+      ]
+    }
+  },
+  "dock": {
+    "position": "bottom",
+    "pinned": [
+      "org.gnome.Nautilus",
+      "chromium",
+      "foot",
+      "omacalc",
+      "omawrite",
+      "X",
+      "YouTube"
+    ]
+  },
+  "plugins": []
+}

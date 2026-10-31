@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# gran:summary=Toggle mirroring theme changes to and from your herdr machines
+
+gran-toggle herdr-theme-sync
+
+if gran-toggle-enabled herdr-theme-sync; then
+  gran-notification-send -g 󰸌 "$(gran-i18n themeSync.enabled)"
+else
+  gran-notification-send -g 󰸌 "$(gran-i18n themeSync.disabled)"
+fi

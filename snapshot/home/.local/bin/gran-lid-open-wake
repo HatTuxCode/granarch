@@ -1,0 +1,11 @@
+#!/bin/bash
+# Reconcile monitors and wake the password screen after the lid opens.
+exec 9>"${XDG_RUNTIME_DIR:-/run/user/$UID}/gran-lid-open-wake.lock"
+flock -n 9 || exit 0
+for delay in 0 0.5 1 2; do
+  sleep "$delay"
+  gran-hw-laptop-closed && exit 0
+  timeout 2s gran-hyprland-monitor-clamshell >/dev/null 2>&1 || true
+  timeout 2s gran-shell lock wake >/dev/null 2>&1 || true
+  timeout 2s gran system wake >/dev/null 2>&1 || true
+done

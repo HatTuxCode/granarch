@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "hattux.battery-idle-dpms",
+  "name": "Battery idle display power",
+  "version": "1.0.0",
+  "author": "hattux",
+  "description": "Keeps displays on while on AC power or above 25% battery; turns them off after 20 minutes idle only while discharging at 25% or less.",
+  "kinds": [
+    "service"
+  ],
+  "keepLoaded": true,
+  "entryPoints": {
+    "service": "Service.qml"
+  }
+}

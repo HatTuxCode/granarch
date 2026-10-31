@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# gran:summary=Select and set the system timezone
+# gran:group=menu
+# gran:name=timezone
+
+set -e
+
+timezone=$(timedatectl list-timezones | gran-menu-select "$(gran-i18n timezone.setTitle)" -- --width 520 --maxheight 520) || exit 1
+sudo timedatectl set-timezone "$timezone"
+gran-shell -q gran.clock refresh
+gran-notification-send "$(gran-i18n timezone.changed "$timezone")"

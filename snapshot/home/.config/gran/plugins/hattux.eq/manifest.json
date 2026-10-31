@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "hattux.eq",
+  "name": "Equalizer",
+  "version": "1.0.0",
+  "author": "hattux",
+  "description": "Equalizador de 5 bandas em tempo real ligado ao gran-eq",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "Panel.qml"
+  },
+  "barWidget": {
+    "displayName": "Equalizer",
+    "description": "Ajusta os ganhos do equalizador gran-eq em tempo real",
+    "category": "Audio",
+    "allowMultiple": false,
+    "defaultSection": "right"
+  }
+}

@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# gran:summary=Launch a floating terminal with the Gran presentation wrapper
+# gran:args=<command>
+
+# Export the current theme's gum styling so gum widgets match the active theme
+# even after a theme switch (the inherited environment is captured at login).
+source gran-restart-gum
+
+cmd="$*"
+# 130 is the user bailing with Ctrl-C; anything else gets the Done/Failed prompt.
+presentation_script="gran-show-logo; $cmd; code=\$?; if (( code != 130 )); then gran-show-done \$code; fi"
+
+exec setsid uwsm-app -- xdg-terminal-exec --app-id=org.gran.terminal --title=Gran -e bash -c "$presentation_script"

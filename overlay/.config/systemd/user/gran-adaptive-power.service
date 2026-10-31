@@ -1,0 +1,8 @@
+[Unit]
+Description=Gran adaptive power profile
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/share/gran/bin/gran-adaptive-power

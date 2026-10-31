@@ -1,0 +1,18 @@
+#!/bin/bash
+
+# gran:summary=Print the directory holding a theme, preferring a user-installed copy
+# gran:args=<theme-name>
+# gran:examples=gran theme dir tokyo-night
+
+theme="${1:-}"
+
+if [[ -z $theme ]]; then
+  echo "Usage: gran-theme-dir <theme-name>" >&2
+  exit 1
+fi
+
+if [[ -d $HOME/.config/gran/themes/$theme ]]; then
+  echo "$HOME/.config/gran/themes/$theme"
+else
+  echo "$GRAN_PATH/themes/$theme"
+fi

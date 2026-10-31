@@ -1,0 +1,42 @@
+#!/bin/bash
+set -euo pipefail
+
+if (( $# > 0 )); then
+  selected=$(realpath -- "$1")
+else
+  selected=$(gran-theme-bg-switcher)
+  [[ -n "$selected" ]] || exit 0
+  selected=$(realpath -- "$selected")
+fi
+
+[[ -f "$selected" ]] || {
+  printf 'Arquivo de wallpaper não encontrado: %s\n' "$selected" >&2
+  exit 1
+}
+
+theme_name=$(<"$HOME/.local/state/gran/current/theme.name")
+[[ "$theme_name" =~ ^[a-z0-9][a-z0-9-]*$ ]] || exit 1
+
+state_dir="$HOME/.config/gran/backgrounds/$theme_name"
+mkdir -p "$state_dir"
+
+extension="${selected##*.}"
+if [[ "$extension" == "$selected" ]]; then
+  extension=bin
+else
+  extension="${extension,,}"
+  case "$extension" in
+    jpg|jpeg|png|gif|bmp|webp|mp4|m4v|mov|webm|mkv|avi) ;;
+    *) extension=bin ;;
+  esac
+fi
+
+target="$state_dir/00-persistent-wallpaper.$extension"
+temporary=$(mktemp "$state_dir/.persistent-wallpaper.XXXXXX")
+trap 'rm -f -- "$temporary"' EXIT
+cp -- "$selected" "$temporary"
+mv -f -- "$temporary" "$target"
+trap - EXIT
+printf '%s\n' "$target" >"$state_dir/.persistent-wallpaper.path"
+
+gran-theme-bg-set "$target"

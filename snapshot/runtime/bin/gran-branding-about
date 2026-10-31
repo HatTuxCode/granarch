@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# gran:summary=Edit, set, or reset About branding
+# gran:group=branding
+# gran:name=about
+# gran:args=<image|text|reset>
+# gran:examples=gran branding about image | gran branding about text | gran branding about reset
+
+set -euo pipefail
+
+case "${1:-}" in
+image)
+  image=$(gran-file-select --title "$(gran-i18n branding.pickAboutImage)" --extensions "png svg")
+  if gran-transcode-ascii "$image" ~/.config/gran/branding/about.txt --width 54 --height 26; then
+    gran-launch-about >/dev/null 2>&1
+  fi
+  ;;
+text)
+  gran-launch-editor ~/.config/gran/branding/about.txt >/dev/null 2>&1 && gran-launch-about >/dev/null 2>&1
+  ;;
+reset)
+  cp "$GRAN_PATH/icon.txt" ~/.config/gran/branding/about.txt && gran-launch-about >/dev/null 2>&1
+  ;;
+*)
+  echo "Usage: gran-branding-about <image|text|reset>" >&2
+  exit 1
+  ;;
+esac

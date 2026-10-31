@@ -1,0 +1,11 @@
+[Unit]
+Description=Apply Gran AC and battery policies every minute
+PartOf=graphical-session.target
+
+[Timer]
+OnActiveSec=5s
+OnUnitActiveSec=1min
+Unit=gran-adaptive-power.service
+
+[Install]
+WantedBy=graphical-session.target

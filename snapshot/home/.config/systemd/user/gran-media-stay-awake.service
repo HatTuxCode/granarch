@@ -1,0 +1,6 @@
+[Unit]
+Description=Keep the screen awake while media plays
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/gran-media-stay-awake

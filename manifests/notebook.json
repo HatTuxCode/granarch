@@ -1,0 +1,18 @@
+{
+  "source_hardware": "ASUS ZenBook UX425EA",
+  "ac_profile": "performance",
+  "battery_profile": "balanced",
+  "low_battery_profile": "power-saver",
+  "low_battery_percent": 25,
+  "keyboard_backlight_idle_seconds": 30,
+  "keyboard_backlight_idle_on_ac": false,
+  "keyboard_backlight_default": 1,
+  "screen_idle_low_battery_seconds": 1200,
+  "automatic_idle_lock_enabled": false,
+  "configured_idle_lock_seconds": 1800,
+  "lock_on_lid_close": true,
+  "charge_limit_percent": 95,
+  "asus_fnlock_default": "N",
+  "boot_flow": "plymouth-unlock-sddm-autologin",
+  "boot_menu_timeout_seconds": 0
+}

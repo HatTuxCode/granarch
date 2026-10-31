@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# gran:summary=Dismiss a notification by summary substring. Used by the first-run notifications to dismiss them after clicking for action.
+# gran:args=<summary>
+
+if (($# == 0)); then
+  echo "Usage: gran-notification-dismiss <summary>"
+  exit 1
+fi
+
+gran-shell -q notifications dismiss "$1"

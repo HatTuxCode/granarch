@@ -1,0 +1,544 @@
+// Contents of the field: backdrop, the Deep (the selection in front, older
+// windows receding behind it), the caption, the map of every workspace, the
+// filter, and the key, wheel and pointer handling. Kept apart from the
+// layer-shell window so tests can host it in a plain item.
+
+pragma ComponentBehavior: Bound
+
+import QtQuick
+import Quickshell
+import qs.Commons // qmllint disable import
+import "Layout.js" as Layout
+import "Field.js" as Field
+import "Focus.js" as Focus
+import "Palette.js" as Palette
+
+Item {
+  id: view
+
+  property var controller: null
+  // Gran's current wallpaper, the link its own background and lock plugins
+  // read, as a URL encoded the way Gran's Util.fileUrl does it.
+  readonly property string wallpaperPath: Quickshell.env("HOME")
+    ? Quickshell.env("HOME") + "/.local/state/gran/current/background" : ""
+  property url wallpaperUrl: wallpaperPath ? "file://" + wallpaperPath.split("/").map(encodeURIComponent).join("/") : ""
+  readonly property alias wallpaperImage: wallpaperImage
+  readonly property alias probe: probe
+  readonly property int planeCount: planes.count
+  readonly property alias map: map
+  readonly property alias gauge: gauge
+  // Every color the field draws with, derived from the theme (light or dark)
+  // and derived again when the theme changes (Palette.js).
+  readonly property var theme: Palette.derive({
+    foreground: Color.foreground, background: Color.background, accent: Color.accent, urgent: Color.urgent
+  })
+  // Corner radius and border width: Gran's style tokens, or the user's
+  // [fathom] section of shell.toml (Appearance.qml). One instance for the
+  // whole field.
+  readonly property Appearance appearance: Appearance {}
+
+  // One unit is a pixel on a 1000 px tall screen; everything scales with it.
+  readonly property real unit: Math.max(0.75, Math.min(1.6, height / 1000))
+  // Text also follows Gran's text size (`gran display text size`).
+  readonly property real textUnit: unit * Math.max(0.85, Math.min(1.6, Number(Style.fontScale) || 1))
+  readonly property real margin: Math.max(16, width * 0.022)
+  readonly property var entry: controller ? controller.selectedEntry : null
+  readonly property bool holding: controller !== null && controller.mode === "hold"
+  readonly property bool filtering: controller !== null && controller.filterText.length > 0
+  readonly property bool nothingShown: controller !== null && controller.opened && controller.order.length === 0
+
+  function planeAt(index) {
+    return planes.itemAt(index)
+  }
+
+  function focusKeys() {
+    keyCatcher.forceActiveFocus()
+  }
+
+  // Hover selects only after the pointer really moves: when the field opens
+  // (or the Deep slides) under a resting pointer, nothing changes.
+  property bool pointerPrimed: false
+  property point pointerAt: Qt.point(0, 0)
+
+  function pointerMoved(item, x, y) {
+    const point = item.mapToItem(view, x, y)
+    if (!view.pointerPrimed) {
+      view.pointerPrimed = true
+      view.pointerAt = point
+      return false
+    }
+    if (Math.abs(point.x - view.pointerAt.x) < 3 && Math.abs(point.y - view.pointerAt.y) < 3) return false
+    view.pointerAt = point
+    if (view.controller) view.controller.noteInput()
+    return true
+  }
+
+  Connections {
+    target: view.controller
+    function onOpenedChanged() {
+      view.pointerPrimed = false
+    }
+  }
+
+  opacity: controller && controller.revealed ? 1 : 0
+
+  Behavior on opacity {
+    enabled: view.controller !== null && view.controller.opened
+    NumberAnimation { duration: 130; easing.type: Easing.OutCubic }
+  }
+
+  // ------------------------------------------------------------ backdrop
+
+  // The wallpaper under the veil. Loaded only while the field is shown, so a
+  // quick Alt+Tab decodes nothing, and never cached, so a new wallpaper shows
+  // at the next opening. A large one can take longer to decode than the
+  // field takes to appear: it fades in once it is there.
+  Image {
+    id: wallpaperImage
+    anchors.fill: parent
+    source: view.controller && view.controller.revealed ? view.wallpaperUrl : ""
+    fillMode: Image.PreserveAspectCrop
+    asynchronous: true
+    cache: false
+    sourceSize.width: width
+    sourceSize.height: height
+    opacity: status === Image.Ready ? 1 : 0
+    visible: opacity > 0
+
+    Behavior on opacity {
+      NumberAnimation { duration: 160; easing.type: Easing.OutCubic }
+    }
+  }
+
+  Rectangle {
+    anchors.fill: parent
+    gradient: Gradient {
+      GradientStop { position: 0.0; color: view.theme.veilTop }
+      GradientStop { position: 0.55; color: view.theme.veilMiddle }
+      GradientStop { position: 1.0; color: view.theme.veilBottom }
+    }
+  }
+
+  // Light from the surface, fading as the selection goes deeper; the whole
+  // scene dims with it. Diving into older windows feels like diving.
+  Rectangle {
+    anchors.left: parent.left
+    anchors.right: parent.right
+    height: parent.height * 0.45
+    opacity: 1 - view.sceneDepth / 8
+    gradient: Gradient {
+      GradientStop { position: 0.0; color: view.theme.surfaceLight }
+      GradientStop { position: 1.0; color: view.theme.surfaceLightEnd }
+    }
+  }
+
+  Rectangle {
+    anchors.fill: parent
+    color: view.theme.depthShade
+    opacity: view.sceneDepth * 0.035
+    visible: opacity > 0.005
+  }
+
+  // A click on empty space closes the field without focusing anything; any
+  // pointer movement keeps a held field alive.
+  MouseArea {
+    anchors.fill: parent
+    hoverEnabled: true
+    onClicked: if (view.controller) view.controller.cancel()
+    onPositionChanged: mouse => view.pointerMoved(view, mouse.x, mouse.y)
+  }
+
+  WheelHandler {
+    acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+    onWheel: event => {
+      if (view.controller)
+        view.controller.wheel(event.angleDelta.y, event.pixelDelta.y, event.angleDelta.x, event.pixelDelta.x)
+    }
+  }
+
+  // ------------------------------------------------------------ the Deep
+
+  readonly property real mapHeight: Math.max(96, Math.min(height * 0.2, 210 * unit))
+  readonly property real captionHeight: 62 * unit
+  readonly property real deepTop: margin + 44 * unit
+  // The sounding line takes a column on the left when there is room for it.
+  readonly property real gaugeWidth: width >= 1000 ? 112 * textUnit : 0
+  // Cards take the shape of this screen, which is the focused monitor.
+  readonly property var stage: Layout.deepStage(width, height, deepTop,
+    mapHeight + captionHeight + margin + 30 * unit, width / Math.max(1, height), margin + gaugeWidth)
+
+  // How deep the selection sits, animated: the lead follows it down the
+  // sounding line and the light fades with it.
+  readonly property real selectedDepth: entry ? Math.min(8, Math.max(0, entry.depth)) : 0
+  property real sceneDepth: selectedDepth
+
+  Behavior on sceneDepth {
+    enabled: view.controller !== null && view.controller.cameraAnimated
+    NumberAnimation { duration: 260; easing.type: Easing.OutCubic }
+  }
+
+  Item {
+    id: deep
+
+    anchors.fill: parent
+
+    Repeater {
+      id: planes
+
+      model: view.controller ? view.controller.field : []
+
+      delegate: WindowPlane {
+        controller: view.controller
+        theme: view.theme
+        appearance: view.appearance
+        stage: view.stage
+        unit: view.unit
+        textUnit: view.textUnit
+      }
+    }
+  }
+
+  // ------------------------------------------------------------ the sounding line
+
+  SoundingLine {
+    id: gauge
+
+    x: view.margin
+    y: view.deepTop
+    width: view.gaugeWidth
+    height: view.stage.frontY + view.stage.frontHeight / 2 - view.deepTop
+    visible: view.gaugeWidth > 0
+    controller: view.controller
+    theme: view.theme
+    unit: view.unit
+    textUnit: view.textUnit
+    leadDepth: view.sceneDepth
+  }
+
+  // ------------------------------------------------------------ caption
+
+  Item {
+    id: caption
+
+    x: view.stage.frontX - view.stage.frontWidth / 2
+    y: view.height - view.margin - view.mapHeight - view.captionHeight - 14 * view.unit
+    width: view.width - x - view.margin
+    height: view.captionHeight
+    visible: view.entry !== null
+
+    // The caption names the selection; a click on it focuses it.
+    MouseArea {
+      anchors.fill: parent
+      cursorShape: Qt.PointingHandCursor
+      onClicked: if (view.controller && view.controller.selectedEntry) view.controller.commit()
+    }
+
+    AppIcon {
+      id: captionIcon
+
+      anchors.verticalCenter: parent.verticalCenter
+      size: 38 * view.unit
+      source: view.entry ? view.entry.icon : ""
+      name: view.entry ? view.entry.appName : ""
+    }
+
+    Column {
+      anchors.left: captionIcon.right
+      anchors.leftMargin: 14 * view.unit
+      anchors.right: counter.left
+      anchors.rightMargin: 20 * view.unit
+      anchors.verticalCenter: parent.verticalCenter
+      spacing: 3 * view.unit
+
+      Text {
+        width: parent.width
+        elide: Text.ElideRight
+        color: view.theme.text
+        font.family: Style.font.family
+        font.pixelSize: 20 * view.textUnit
+        font.bold: true
+        textFormat: Text.PlainText
+        text: {
+          const toplevel = view.entry ? view.entry.toplevel : null
+          return toplevel && toplevel.title ? String(toplevel.title) : (view.entry ? (view.entry.title || view.entry.appName) : "")
+        }
+      }
+
+      Text {
+        width: parent.width
+        elide: Text.ElideRight
+        color: view.theme.textSoft
+        font.family: Style.font.family
+        font.pixelSize: 13 * view.textUnit
+        textFormat: Text.PlainText
+        text: {
+          const entry = view.entry
+          if (!entry) return ""
+          const parts = []
+          if (entry.appName) parts.push(entry.appName)
+          const workspace = Field.workspaceLabel(entry.workspaceName, entry.workspaceId)
+          parts.push(Field.isSpecialName(entry.workspaceName) ? "scratchpad " + workspace : "workspace " + workspace)
+          const tab = Focus.groupIndexFor(entry.address, entry.grouped)
+          if (tab > 0 && entry.grouped.length > 1) parts.push("tab " + tab + " of " + entry.grouped.length)
+          parts.push(Field.ageLabel(entry.seconds, entry.active, entry.estimated))
+          const reading = Field.fathomLabel(entry.depth, entry.active, entry.estimated)
+          if (reading) parts.push(reading)
+          if (entry.toplevel && entry.toplevel.urgent) parts.push("wants attention")
+          return parts.join("  ·  ")
+        }
+      }
+    }
+
+    Text {
+      id: counter
+      objectName: "counter"
+
+      anchors.right: parent.right
+      anchors.verticalCenter: parent.verticalCenter
+      color: view.theme.textSoft
+      font.family: Style.font.family
+      font.pixelSize: 13 * view.textUnit
+      textFormat: Text.PlainText
+      text: view.controller && view.controller.selectedSlot >= 0
+        ? (view.controller.selectedSlot + 1) + " / " + view.controller.order.length : ""
+    }
+  }
+
+  Column {
+    anchors.centerIn: parent
+    anchors.verticalCenterOffset: -view.mapHeight / 2
+    spacing: 8 * view.unit
+    visible: view.nothingShown
+
+    Text {
+      anchors.horizontalCenter: parent.horizontalCenter
+      color: view.theme.text
+      font.family: Style.font.family
+      font.pixelSize: 20 * view.textUnit
+      textFormat: Text.PlainText
+      text: "No window matches “" + (view.controller ? view.controller.filterText : "") + "”"
+    }
+
+    Text {
+      anchors.horizontalCenter: parent.horizontalCenter
+      color: view.theme.textSoft
+      font.family: Style.font.family
+      font.pixelSize: 13 * view.textUnit
+      textFormat: Text.PlainText
+      text: "Backspace to edit  ·  Esc to clear"
+    }
+  }
+
+  // ------------------------------------------------------------ summary
+
+  // What the Deep holds, as the counter does: hidden scratchpads and closed
+  // windows are not counted, nor a workspace left without a shown window.
+  Text {
+    objectName: "summary"
+
+    x: view.margin
+    y: view.margin + 8 * view.unit
+    visible: !filterBar.visible && view.controller !== null
+    color: view.theme.textSoft
+    font.family: Style.font.family
+    font.pixelSize: 13 * view.textUnit
+    textFormat: Text.PlainText
+    text: {
+      const controller = view.controller
+      if (!controller) return ""
+      const windows = controller.order.length
+      const workspaces = controller.groups.filter(group => group.entries.some(index => controller.slots[index] >= 0)).length
+      return windows + (windows === 1 ? " window" : " windows") + "  \u00b7  "
+        + workspaces + (workspaces === 1 ? " workspace" : " workspaces")
+    }
+  }
+
+  // ------------------------------------------------------------ filter
+
+  Rectangle {
+    id: filterBar
+    objectName: "filterBar"
+
+    x: view.margin
+    y: view.margin
+    height: 34 * view.unit
+    width: filterRow.implicitWidth + 28 * view.unit
+    radius: Math.min(view.appearance.cornerRadius, height / 2)
+    color: view.theme.panel
+    border.width: view.appearance.borderWidth
+    border.color: view.filtering ? view.theme.accent : view.theme.panelBorder
+    visible: view.filtering || (view.controller !== null && view.controller.mode === "browse")
+
+    // Not empty space: a click here must not close the field.
+    MouseArea {
+      anchors.fill: parent
+      onClicked: view.focusKeys()
+    }
+
+    Row {
+      id: filterRow
+
+      anchors.verticalCenter: parent.verticalCenter
+      x: 14 * view.unit
+      spacing: 8 * view.unit
+
+      Text {
+        anchors.verticalCenter: parent.verticalCenter
+        color: view.filtering ? view.theme.accentText : view.theme.textFaint
+        font.family: Style.font.family
+        font.pixelSize: 14 * view.textUnit
+        textFormat: Text.PlainText
+        text: "/"
+      }
+
+      Text {
+        anchors.verticalCenter: parent.verticalCenter
+        color: view.filtering ? view.theme.text : view.theme.textFaint
+        font.family: Style.font.family
+        font.pixelSize: 14 * view.textUnit
+        textFormat: Text.PlainText
+        text: view.filtering ? view.controller.filterText : "type to filter"
+      }
+
+      Rectangle {
+        anchors.verticalCenter: parent.verticalCenter
+        visible: view.filtering
+        width: 2
+        height: 16 * view.unit
+        color: view.theme.accent
+      }
+
+      Text {
+        anchors.verticalCenter: parent.verticalCenter
+        visible: view.filtering
+        color: view.theme.textSoft
+        font.family: Style.font.family
+        font.pixelSize: 12 * view.textUnit
+        textFormat: Text.PlainText
+        text: view.controller ? view.controller.order.length + " of " + view.controller.field.length : ""
+      }
+    }
+  }
+
+  // ------------------------------------------------------------ hints
+
+  Row {
+    id: hints
+
+    anchors.right: parent.right
+    anchors.rightMargin: view.margin
+    y: view.height - view.margin - view.mapHeight - 20 * view.unit
+    spacing: 16 * view.unit
+
+    Repeater {
+      model: view.holding
+        ? [["Tab", "deeper"], ["↑↓", "dive"], ["←→", "workspace"], ["Space", "keep open"], ["Esc", "cancel"]]
+        : [["↑↓", "dive"], ["←→", "workspace"], ["1–9", "go to"], ["Enter", "focus"], ["Esc", view.filtering ? "clear" : "close"]]
+
+      delegate: Row {
+        id: hint
+
+        required property var modelData
+
+        spacing: 5 * view.unit
+
+        Rectangle {
+          anchors.verticalCenter: parent.verticalCenter
+          width: Math.max(height, keyText.implicitWidth + 10 * view.unit)
+          height: 18 * view.unit
+          radius: Math.min(view.appearance.cornerRadius, height / 2)
+          color: view.theme.key
+          border.width: view.appearance.borderWidth
+          border.color: view.theme.keyBorder
+
+          Text {
+            id: keyText
+
+            anchors.centerIn: parent
+            color: view.theme.textSoft
+            font.family: Style.font.family
+            font.pixelSize: 11 * view.textUnit
+            textFormat: Text.PlainText
+            text: hint.modelData[0]
+          }
+        }
+
+        Text {
+          anchors.verticalCenter: parent.verticalCenter
+          color: view.theme.textFaint
+          font.family: Style.font.family
+          font.pixelSize: 11 * view.textUnit
+          textFormat: Text.PlainText
+          text: hint.modelData[1]
+        }
+      }
+    }
+  }
+
+  // Not empty space: a click on the hints must not close the field.
+  MouseArea {
+    x: hints.x
+    y: hints.y
+    width: hints.width
+    height: hints.height
+    onClicked: view.focusKeys()
+  }
+
+  // ------------------------------------------------------------ the map
+
+  WorkspaceMap {
+    id: map
+
+    x: view.margin
+    width: view.width - view.margin * 2
+    height: view.mapHeight
+    y: view.height - view.margin - height
+    controller: view.controller
+    view: view
+    theme: view.theme
+    appearance: view.appearance
+    unit: view.unit
+    textUnit: view.textUnit
+  }
+
+  // ------------------------------------------------------------ keys
+
+  Item {
+    id: keyCatcher
+
+    anchors.fill: parent
+    focus: true
+
+    Keys.onPressed: event => {
+      if (!view.controller) return
+      // Any key counts as activity for the hold-mode watchdog.
+      view.controller.noteInput()
+      event.accepted = view.controller.handleKey(event.key, event.modifiers, event.text)
+    }
+
+    // The Alt press predates this surface, but its release arrives here once
+    // the exclusive keyboard grab is in place.
+    Keys.onReleased: event => {
+      if (event.key === Qt.Key_Alt && !event.isAutoRepeat && view.controller) {
+        view.controller.altReleased()
+        event.accepted = true
+      }
+    }
+  }
+
+  // Until the field is drawn (the first 90 ms of a hold), a click or a wheel
+  // turn must not land on something the user cannot see.
+  MouseArea {
+    anchors.fill: parent
+    z: 10000
+    visible: view.controller !== null && view.controller.opened && !view.controller.revealed
+    acceptedButtons: Qt.AllButtons
+    onWheel: wheel => wheel.accepted = true
+  }
+
+  FrameProbe {
+    id: probe
+
+    running: view.controller !== null && view.controller.opened && view.controller.probeEnabled
+  }
+}

@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# gran:summary=Remove the Xbox Cloud Gaming web app.
+
+set -e
+
+gran-webapp-remove "Xbox Cloud Gaming"

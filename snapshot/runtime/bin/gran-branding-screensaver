@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# gran:summary=Edit, set, or reset screensaver branding
+# gran:group=branding
+# gran:name=screensaver
+# gran:args=<image|text|reset>
+# gran:examples=gran branding screensaver image | gran branding screensaver text | gran branding screensaver reset
+
+set -euo pipefail
+
+case "${1:-}" in
+image)
+  image=$(gran-file-select --title "$(gran-i18n branding.pickScreensaverImage)" --extensions "png svg")
+  if gran-transcode-ascii "$image" ~/.config/gran/branding/screensaver.txt; then
+    gran-launch-screensaver force >/dev/null 2>&1
+  fi
+  ;;
+text)
+  gran-launch-editor ~/.config/gran/branding/screensaver.txt >/dev/null 2>&1 && gran-launch-screensaver force >/dev/null 2>&1
+  ;;
+reset)
+  cp "$GRAN_PATH/logo.txt" ~/.config/gran/branding/screensaver.txt && gran-launch-screensaver force >/dev/null 2>&1
+  ;;
+*)
+  echo "Usage: gran-branding-screensaver <image|text|reset>" >&2
+  exit 1
+  ;;
+esac

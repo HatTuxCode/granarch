@@ -1,0 +1,5 @@
+{
+  "trigger.toggle.nightlight": {"action":"gran-nightlight-soft"},
+  "appearance.background": {"action":"gran-theme-bg-persist"},
+  "update.gran": {"action":"gran-launch-floating-terminal-with-presentation 'gran update'"}
+}

@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# gran:summary=Check for Arch package updates
+updates=$(checkupdates 2>/dev/null)
+[[ -n $updates ]]

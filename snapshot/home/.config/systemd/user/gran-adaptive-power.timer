@@ -1,0 +1,10 @@
+[Unit]
+Description=Run the adaptive power profile engine every minute
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=1min
+Unit=gran-adaptive-power.service
+
+[Install]
+WantedBy=timers.target

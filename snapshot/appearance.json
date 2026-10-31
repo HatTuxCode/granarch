@@ -1,0 +1,10 @@
+{
+  "gtk-theme": "'Adwaita-dark'",
+  "icon-theme": "'Yaru-blue'",
+  "cursor-theme": "'Yaru'",
+  "cursor-size": "24",
+  "font-name": "'Adwaita Sans 11'",
+  "document-font-name": "'Adwaita Sans 12'",
+  "monospace-font-name": "'Adwaita Mono 11'",
+  "color-scheme": "'prefer-dark'"
+}

@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# gran:summary=Show Gran desktop information
+exec kitty --title Gran -e bash -c 'printf "GranArch — desktop Gran\n"; gran version; printf "\n"; uname -sr; read -r -p "Enter para fechar"'

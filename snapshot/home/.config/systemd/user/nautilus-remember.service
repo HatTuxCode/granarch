@@ -1,0 +1,11 @@
+[Unit]
+Description=Remember the last Nautilus folder
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+ExecStart=@@GRAN_HOME@@/.local/bin/nautilus-remember --watch
+Restart=on-failure
+
+[Install]
+WantedBy=graphical-session.target

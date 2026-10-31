@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# gran:summary=Open the Gran background switcher
+# gran:group=theme
+# gran:name=bg-switcher
+# gran:aliases=gran background
+
+theme_name=$(cat "$HOME/.local/state/gran/current/theme.name" 2>/dev/null)
+current_background=$(readlink -f "$HOME/.local/state/gran/current/background" 2>/dev/null)
+
+gran-menu-images \
+  --selected "$current_background" \
+  "$HOME/.local/state/gran/current/theme/backgrounds" \
+  "$HOME/.config/gran/backgrounds/$theme_name"

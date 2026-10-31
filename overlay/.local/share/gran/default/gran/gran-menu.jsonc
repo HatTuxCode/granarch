@@ -1,0 +1,1373 @@
+{
+  "apps": {
+    "label": "Apps",
+    "action": "gran-launch-apps",
+    "icon": "󰀻",
+    "aliases": [
+      "app",
+      "applications"
+    ],
+    "provider": "apps"
+  },
+  "learn": {
+    "icon": "󰧑",
+    "label": "Learn"
+  },
+  "appearance": {
+    "icon": "󰏘",
+    "label": "Appearance",
+    "aliases": [
+      "style"
+    ]
+  },
+  "trigger": {
+    "icon": "󱓞",
+    "label": "Trigger"
+  },
+  "setup": {
+    "label": "Setup",
+    "icon": "",
+    "aliases": [
+      "settings"
+    ]
+  },
+  "update": {
+    "icon": "",
+    "label": "Update",
+    "aliases": [
+      "restart",
+      "refresh"
+    ]
+  },
+  "about": {
+    "label": "About Gran",
+    "action": "gran-launch-about",
+    "icon": ""
+  },
+  "system": {
+    "icon": "",
+    "label": "System",
+    "aliases": [
+      "power-menu"
+    ]
+  },
+  "system.screensaver": {
+    "icon": "󱄄",
+    "label": "Screensaver",
+    "action": "gran-launch-screensaver force"
+  },
+  "system.lock": {
+    "icon": "",
+    "label": "Lock",
+    "action": "gran-system-lock"
+  },
+  "system.suspend": {
+    "icon": "󰒲",
+    "label": "Suspend",
+    "when": "! gran-toggle-enabled suspend-off && ! gran-sleep-disabled",
+    "action": "systemctl suspend"
+  },
+  "system.hibernate": {
+    "icon": "󰤁",
+    "label": "Hibernate",
+    "when": "gran-hibernation-available && ! gran-sleep-disabled",
+    "action": "systemctl hibernate"
+  },
+  "system.logout": {
+    "icon": "󰍃",
+    "label": "Logout",
+    "action": "gran-system logout"
+  },
+  "system.reboot": {
+    "icon": "󰜉",
+    "label": "Reboot",
+    "action": "gran-system reboot"
+  },
+  "system.shutdown": {
+    "icon": "󰐥",
+    "label": "Shutdown",
+    "action": "gran-system shutdown"
+  },
+  "learn.keybindings": {
+    "icon": "",
+    "label": "Keybindings",
+    "action": "gran-menu-keybindings"
+  },
+  "learn.hyprland": {
+    "icon": "",
+    "label": "Hyprland",
+    "action": "gran-launch-browser 'https://wiki.hypr.land/'"
+  },
+  "learn.arch": {
+    "icon": "󰣇",
+    "label": "Arch",
+    "action": "gran-launch-browser 'https://wiki.archlinux.org/title/Main_page'"
+  },
+  "learn.neovim": {
+    "icon": "",
+    "label": "Neovim",
+    "action": "gran-launch-browser 'https://www.lazyvim.org/keymaps'"
+  },
+  "learn.bash": {
+    "icon": "󱆃",
+    "label": "Bash",
+    "action": "gran-launch-browser 'https://devhints.io/bash'"
+  },
+  "learn.tmux-keybindings": {
+    "icon": "",
+    "label": "Tmux",
+    "action": "gran-menu-tmux-keybindings"
+  },
+  "learn.herdr-keybindings": {
+    "icon": "",
+    "label": "Herdr",
+    "action": "gran-menu-herdr-keybindings"
+  },
+  "appearance.theme": {
+    "icon": "󰸌",
+    "label": "Theme",
+    "aliases": [
+      "theme",
+      "themes"
+    ],
+    "action": "gran-shell shell summon gran.image-picker '{\"source\":\"themes\"}'"
+  },
+  "appearance.background": {
+    "label": "Background",
+    "action": "gran-theme-bg-persist",
+    "aliases": [
+      "background",
+      "wallpaper"
+    ]
+  },
+  "appearance.font": {
+    "icon": "",
+    "label": "Font",
+    "provider": "fonts"
+  },
+  "appearance.top-bar": {
+    "icon": "󰍜",
+    "label": "Menu Bar"
+  },
+  "appearance.top-bar.hide": {
+    "icon": "󰈉",
+    "label": "Hide Bar",
+    "when": "! gran-toggle-enabled bar-off",
+    "action": "gran-toggle-bar"
+  },
+  "appearance.top-bar.show": {
+    "icon": "󰈈",
+    "label": "Show Bar",
+    "when": "gran-toggle-enabled bar-off",
+    "action": "gran-toggle-bar"
+  },
+  "appearance.top-bar.position": {
+    "icon": "",
+    "label": "Position Bar"
+  },
+  "appearance.top-bar.background": {
+    "icon": "󰂵",
+    "label": "Bar Background"
+  },
+  "appearance.top-bar.background.opaque": {
+    "icon": "󰝤",
+    "label": "Opaque Bar",
+    "checked": "[[ $(gran-bar background) == \"opaque\" ]]",
+    "action": "gran-bar background opaque"
+  },
+  "appearance.top-bar.background.glassy": {
+    "icon": "󰂵",
+    "label": "Glassy Bar",
+    "checked": "[[ $(gran-bar background) == \"glassy\" ]]",
+    "action": "gran-bar background glassy"
+  },
+  "appearance.top-bar.background.clear": {
+    "icon": "󰝣",
+    "label": "Clear Bar",
+    "checked": "[[ $(gran-bar background) == \"none\" ]]",
+    "action": "gran-bar background none"
+  },
+  "appearance.top-bar.indicators": {
+    "icon": "󰋽",
+    "label": "Bar Indicators"
+  },
+  "appearance.top-bar.indicators.battery-percentage-on": {
+    "icon": "󰁹",
+    "label": "Show Battery %",
+    "when": "gran-hw-laptop && [[ $(gran-bar get gran.power showPercentage) != true ]]",
+    "action": "gran-shell gran.power togglePercentage"
+  },
+  "appearance.top-bar.indicators.battery-percentage-off": {
+    "icon": "󰁹",
+    "label": "Hide Battery %",
+    "when": "gran-hw-laptop && [[ $(gran-bar get gran.power showPercentage) == true ]]",
+    "action": "gran-shell gran.power togglePercentage"
+  },
+  "appearance.top-bar.indicators.clock": {
+    "icon": "󰥔",
+    "label": "Clock"
+  },
+  "appearance.top-bar.indicators.clock.sunday-24h": {
+    "icon": "󰥔",
+    "label": "Sunday 14:30",
+    "when": "[[ $(gran-bar position) != \"left\" && $(gran-bar position) != \"right\" ]]",
+    "checked": "[[ $(gran-bar get gran.clock format) == \"dddd HH:mm\" ]]",
+    "action": "gran-bar set gran.clock format \"dddd HH:mm\""
+  },
+  "appearance.top-bar.indicators.clock.sunday-12h": {
+    "icon": "󰥔",
+    "label": "Sunday 2:30 PM",
+    "when": "[[ $(gran-bar position) != \"left\" && $(gran-bar position) != \"right\" ]]",
+    "checked": "[[ $(gran-bar get gran.clock format) == \"dddd h:mm AP\" ]]",
+    "action": "gran-bar set gran.clock format \"dddd h:mm AP\""
+  },
+  "appearance.top-bar.indicators.clock.sunday-seconds-24h": {
+    "icon": "󰥔",
+    "label": "Sunday 14:30:05",
+    "when": "[[ $(gran-bar position) != \"left\" && $(gran-bar position) != \"right\" ]]",
+    "checked": "[[ $(gran-bar get gran.clock format) == \"dddd HH:mm:ss\" ]]",
+    "action": "gran-bar set gran.clock format \"dddd HH:mm:ss\""
+  },
+  "appearance.top-bar.indicators.clock.sunday-seconds-12h": {
+    "icon": "󰥔",
+    "label": "Sunday 2:30:05 PM",
+    "when": "[[ $(gran-bar position) != \"left\" && $(gran-bar position) != \"right\" ]]",
+    "checked": "[[ $(gran-bar get gran.clock format) == \"dddd h:mm:ss AP\" ]]",
+    "action": "gran-bar set gran.clock format \"dddd h:mm:ss AP\""
+  },
+  "appearance.top-bar.indicators.clock.time-24h": {
+    "icon": "󰥔",
+    "label": "14:30",
+    "when": "[[ $(gran-bar position) != \"left\" && $(gran-bar position) != \"right\" ]]",
+    "checked": "[[ $(gran-bar get gran.clock format) == \"HH:mm\" ]]",
+    "action": "gran-bar set gran.clock format \"HH:mm\""
+  },
+  "appearance.top-bar.indicators.clock.time-12h": {
+    "icon": "󰥔",
+    "label": "2:30 PM",
+    "when": "[[ $(gran-bar position) != \"left\" && $(gran-bar position) != \"right\" ]]",
+    "checked": "[[ $(gran-bar get gran.clock format) == \"h:mm AP\" ]]",
+    "action": "gran-bar set gran.clock format \"h:mm AP\""
+  },
+  "appearance.top-bar.indicators.clock.date-24h": {
+    "icon": "󰥔",
+    "label": "Sun 3 May 14:30",
+    "when": "[[ $(gran-bar position) != \"left\" && $(gran-bar position) != \"right\" ]]",
+    "checked": "[[ $(gran-bar get gran.clock format) == \"ddd d MMM HH:mm\" ]]",
+    "action": "gran-bar set gran.clock format \"ddd d MMM HH:mm\""
+  },
+  "appearance.top-bar.indicators.clock.date-12h": {
+    "icon": "󰥔",
+    "label": "Sun 3 May 2:30 PM",
+    "when": "[[ $(gran-bar position) != \"left\" && $(gran-bar position) != \"right\" ]]",
+    "checked": "[[ $(gran-bar get gran.clock format) == \"ddd d MMM h:mm AP\" ]]",
+    "action": "gran-bar set gran.clock format \"ddd d MMM h:mm AP\""
+  },
+  "appearance.top-bar.indicators.clock.week": {
+    "icon": "󰥔",
+    "label": "3 May W18 2026",
+    "when": "[[ $(gran-bar position) != \"left\" && $(gran-bar position) != \"right\" ]]",
+    "checked": "[[ $(gran-bar get gran.clock format) == \"d MMMM 'W'ww yyyy\" ]]",
+    "action": "gran-bar set gran.clock format \"d MMMM 'W'ww yyyy\""
+  },
+  "appearance.top-bar.indicators.clock.iso": {
+    "icon": "󰥔",
+    "label": "2026-05-03 14:30",
+    "when": "[[ $(gran-bar position) != \"left\" && $(gran-bar position) != \"right\" ]]",
+    "checked": "[[ $(gran-bar get gran.clock format) == \"yyyy-MM-dd HH:mm\" ]]",
+    "action": "gran-bar set gran.clock format \"yyyy-MM-dd HH:mm\""
+  },
+  "appearance.top-bar.indicators.clock.stacked-24h": {
+    "icon": "󰥔",
+    "label": "14 — 30",
+    "when": "[[ $(gran-bar position) == \"left\" || $(gran-bar position) == \"right\" ]]",
+    "checked": "[[ $(gran-bar get gran.clock verticalFormat) == $'HH\\n—\\nmm' ]]",
+    "action": "gran-bar set gran.clock verticalFormat $'HH\\n—\\nmm'"
+  },
+  "appearance.top-bar.indicators.clock.stacked-12h": {
+    "icon": "󰥔",
+    "label": "2 — 30 PM",
+    "when": "[[ $(gran-bar position) == \"left\" || $(gran-bar position) == \"right\" ]]",
+    "checked": "[[ $(gran-bar get gran.clock verticalFormat) == $'h\\n—\\nmm\\nAP' ]]",
+    "action": "gran-bar set gran.clock verticalFormat $'h\\n—\\nmm\\nAP'"
+  },
+  "appearance.top-bar.indicators.clock.stacked-date": {
+    "icon": "󰥔",
+    "label": "03 May W18 '26",
+    "when": "[[ $(gran-bar position) == \"left\" || $(gran-bar position) == \"right\" ]]",
+    "checked": "[[ $(gran-bar get gran.clock verticalFormat) == $'dd\\nMMM\\n\\'W\\'ww\\n\\'\\'yy' ]]",
+    "action": "gran-bar set gran.clock verticalFormat $'dd\\nMMM\\n\\'W\\'ww\\n\\'\\'yy'"
+  },
+  "appearance.top-bar.indicators.clock.stacked-time": {
+    "icon": "󰥔",
+    "label": "14 30",
+    "when": "[[ $(gran-bar position) == \"left\" || $(gran-bar position) == \"right\" ]]",
+    "checked": "[[ $(gran-bar get gran.clock verticalFormat) == $'HH\\nmm' ]]",
+    "action": "gran-bar set gran.clock verticalFormat $'HH\\nmm'"
+  },
+  "appearance.top-bar.position.top": {
+    "icon": "󰁝",
+    "label": "Top Bar",
+    "action": "gran-bar position top"
+  },
+  "appearance.top-bar.position.bottom": {
+    "icon": "󰁅",
+    "label": "Bottom Bar",
+    "action": "gran-bar position bottom"
+  },
+  "appearance.top-bar.position.left": {
+    "icon": "󰁍",
+    "label": "Left Bar",
+    "action": "gran-bar position left"
+  },
+  "appearance.top-bar.position.right": {
+    "icon": "󰁔",
+    "label": "Right Bar",
+    "action": "gran-bar position right"
+  },
+  "appearance.windows": {
+    "icon": "󰖲",
+    "label": "Windows"
+  },
+  "appearance.windows.gaps-on": {
+    "icon": "",
+    "label": "Window Gaps On",
+    "when": "gran-hyprland-toggle-enabled window-no-gaps",
+    "action": "gran-hyprland-window-gaps-toggle"
+  },
+  "appearance.windows.gaps-off": {
+    "icon": "",
+    "label": "Window Gaps Off",
+    "when": "! gran-hyprland-toggle-enabled window-no-gaps",
+    "action": "gran-hyprland-window-gaps-toggle"
+  },
+  "appearance.windows.corners": {
+    "icon": "󰘇",
+    "label": "Window Corners"
+  },
+  "appearance.windows.corners.theme": {
+    "icon": "󰏘",
+    "label": "Theme Corners",
+    "checked": "[[ $(gran-hyprland-corners) == \"theme\" ]]",
+    "action": "gran-hyprland-corners theme"
+  },
+  "appearance.windows.corners.sharp": {
+    "icon": "󰝣",
+    "label": "Sharp Corners",
+    "checked": "[[ $(gran-hyprland-corners) == \"sharp\" ]]",
+    "action": "gran-hyprland-corners sharp"
+  },
+  "appearance.windows.corners.rounded": {
+    "icon": "󰘇",
+    "label": "Rounded Corners",
+    "checked": "[[ $(gran-hyprland-corners) == \"rounded\" ]]",
+    "action": "gran-hyprland-corners rounded"
+  },
+  "appearance.windows.transparency": {
+    "icon": "󰂵",
+    "label": "Window Opacity"
+  },
+  "appearance.windows.transparency.opaque": {
+    "icon": "󰝤",
+    "label": "Opaque Windows",
+    "checked": "[[ $(gran-hyprland-window-transparency) == \"opaque\" ]]",
+    "action": "gran-hyprland-window-transparency opaque"
+  },
+  "appearance.windows.transparency.transparent": {
+    "icon": "󰝣",
+    "label": "Transparent Windows",
+    "checked": "[[ $(gran-hyprland-window-transparency) == \"transparent\" ]]",
+    "action": "gran-hyprland-window-transparency transparent"
+  },
+  "appearance.windows.transparency.glassy": {
+    "icon": "󰂵",
+    "label": "Glassy Windows",
+    "checked": "[[ $(gran-hyprland-window-transparency) == \"glassy\" ]]",
+    "action": "gran-hyprland-window-transparency glassy"
+  },
+  "appearance.windows.one-window-ratio-on": {
+    "icon": "",
+    "label": "1-Window Ratio On",
+    "when": "! gran-hyprland-toggle-enabled single-window-aspect-ratio",
+    "action": "gran-hyprland-window-single-square-aspect-toggle"
+  },
+  "appearance.windows.one-window-ratio-off": {
+    "icon": "",
+    "label": "1-Window Ratio Off",
+    "when": "gran-hyprland-toggle-enabled single-window-aspect-ratio",
+    "action": "gran-hyprland-window-single-square-aspect-toggle"
+  },
+  "appearance.branding": {
+    "icon": "",
+    "iconFont": "gran",
+    "label": "Branding"
+  },
+  "appearance.branding.screensaver": {
+    "icon": "󱄄",
+    "label": "Screensaver"
+  },
+  "appearance.branding.about": {
+    "icon": "",
+    "label": "About"
+  },
+  "appearance.branding.about.text": {
+    "icon": "",
+    "label": "Edit Text",
+    "action": "gran-branding-about text"
+  },
+  "appearance.branding.about.image": {
+    "icon": "",
+    "label": "Set From Image",
+    "action": "gran-branding-about image"
+  },
+  "appearance.branding.about.default": {
+    "icon": "",
+    "label": "Restore Default",
+    "action": "gran-branding-about reset"
+  },
+  "appearance.branding.screensaver.text": {
+    "icon": "",
+    "label": "Edit Text",
+    "action": "gran-branding-screensaver text"
+  },
+  "appearance.branding.screensaver.image": {
+    "icon": "",
+    "label": "Set From Image",
+    "action": "gran-branding-screensaver image"
+  },
+  "appearance.branding.screensaver.default": {
+    "icon": "",
+    "label": "Restore Default",
+    "action": "gran-branding-screensaver reset"
+  },
+  "appearance.dock": {
+    "icon": "󱂩",
+    "label": "Dock",
+    "when": "[[ $(gran-hyprland-workspace-layout-current) == \"floating\" ]]"
+  },
+  "appearance.dock.autohide": {
+    "icon": "󰈉",
+    "label": "Auto-hide Dock",
+    "when": "[[ $(gran-dock autohide) == \"off\" ]]",
+    "action": "gran-dock autohide on"
+  },
+  "appearance.dock.always-on": {
+    "icon": "󰈈",
+    "label": "Always-on Dock",
+    "when": "[[ $(gran-dock autohide) == \"on\" ]]",
+    "action": "gran-dock autohide off"
+  },
+  "appearance.dock.position": {
+    "icon": "",
+    "label": "Dock Position"
+  },
+  "appearance.dock.position.top": {
+    "icon": "󰁝",
+    "label": "Top Dock",
+    "checked": "[[ $(gran-dock position) == \"top\" ]]",
+    "action": "gran-dock position top"
+  },
+  "appearance.dock.position.bottom": {
+    "icon": "󰁅",
+    "label": "Bottom Dock",
+    "checked": "[[ $(gran-dock position) == \"bottom\" ]]",
+    "action": "gran-dock position bottom"
+  },
+  "appearance.dock.position.left": {
+    "icon": "󰁍",
+    "label": "Left Dock",
+    "checked": "[[ $(gran-dock position) == \"left\" ]]",
+    "action": "gran-dock position left"
+  },
+  "appearance.dock.position.right": {
+    "icon": "󰁔",
+    "label": "Right Dock",
+    "checked": "[[ $(gran-dock position) == \"right\" ]]",
+    "action": "gran-dock position right"
+  },
+  "appearance.workspace-layout": {
+    "icon": "󱂬",
+    "label": "Workspace Layout",
+    "title": "Default Workspace Layout"
+  },
+  "appearance.workspace-layout.dwindle": {
+    "icon": "󱓻",
+    "label": "Tiling",
+    "checked": "[[ $(gran-hyprland-workspace-layout-default) == \"dwindle\" ]]",
+    "action": "gran-hyprland-workspace-layout-default dwindle"
+  },
+  "appearance.workspace-layout.scrolling": {
+    "icon": "󰝥",
+    "label": "Scrolling",
+    "checked": "[[ $(gran-hyprland-workspace-layout-default) == \"scrolling\" ]]",
+    "action": "gran-hyprland-workspace-layout-default scrolling"
+  },
+  "appearance.workspace-layout.floating": {
+    "icon": "󰔶",
+    "label": "Floating",
+    "checked": "[[ $(gran-hyprland-workspace-layout-default) == \"floating\" ]]",
+    "action": "gran-hyprland-workspace-layout-default floating"
+  },
+  "appearance.animations-on": {
+    "icon": "󰗘",
+    "label": "Animations On",
+    "when": "gran-hyprland-toggle-enabled no-animations",
+    "action": "gran-toggle-animations"
+  },
+  "appearance.animations-off": {
+    "icon": "󰗘",
+    "label": "Animations Off",
+    "when": "! gran-hyprland-toggle-enabled no-animations",
+    "action": "gran-toggle-animations"
+  },
+  "trigger.toggle": {
+    "icon": "󰔎",
+    "label": "Toggle",
+    "aliases": [
+      "toggle",
+      "toggles"
+    ]
+  },
+  "trigger.toggle.idle-lock-on": {
+    "icon": "",
+    "label": "Stay Awake",
+    "when": "[[ ! -f ~/.local/state/gran/indicators/stay-awake ]]",
+    "action": "gran-toggle-idle"
+  },
+  "trigger.toggle.idle-lock-off": {
+    "icon": "",
+    "label": "Allow Sleep",
+    "when": "[[ -f ~/.local/state/gran/indicators/stay-awake ]]",
+    "action": "gran-toggle-idle"
+  },
+  "trigger.toggle.notifications-on": {
+    "icon": "󰂛",
+    "label": "Notifications On",
+    "when": "[[ $(gran-shell notifications isDnd) == on ]]",
+    "action": "gran-toggle-notification-silencing"
+  },
+  "trigger.toggle.notifications-off": {
+    "icon": "󰂛",
+    "label": "Silence Notifications",
+    "when": "[[ $(gran-shell notifications isDnd) != on ]]",
+    "action": "gran-toggle-notification-silencing"
+  },
+  "trigger.toggle.nightlight-on": {
+    "icon": "󰔎",
+    "label": "Nightlight On",
+    "when": "[[ $(gran-toggle-nightlight --status) != *'\"enabled\":true'* ]]",
+    "action": "gran-toggle-nightlight"
+  },
+  "trigger.toggle.nightlight-off": {
+    "icon": "󰔎",
+    "label": "Nightlight Off",
+    "when": "[[ $(gran-toggle-nightlight --status) == *'\"enabled\":true'* ]]",
+    "action": "gran-toggle-nightlight"
+  },
+  "trigger.toggle.screensaver-on": {
+    "icon": "󱄄",
+    "label": "Screensaver On",
+    "when": "gran-toggle-enabled screensaver-off",
+    "action": "gran-toggle-screensaver"
+  },
+  "trigger.toggle.screensaver-off": {
+    "icon": "󱄄",
+    "label": "Screensaver Off",
+    "when": "! gran-toggle-enabled screensaver-off",
+    "action": "gran-toggle-screensaver"
+  },
+  "trigger.toggle.crash-capture-on": {
+    "icon": "󱚡",
+    "label": "Crash Capture On",
+    "when": "gran-toggle-enabled crash-capture-off",
+    "action": "gran-toggle-crash-capture"
+  },
+  "trigger.toggle.crash-capture-off": {
+    "icon": "󱚡",
+    "label": "Crash Capture Off",
+    "when": "! gran-toggle-enabled crash-capture-off",
+    "action": "gran-toggle-crash-capture"
+  },
+  "trigger.emoji": {
+    "icon": "",
+    "label": "Emoji",
+    "aliases": [
+      "emoji",
+      "emojis"
+    ],
+    "action": "gran-menu-emoji"
+  },
+  "trigger.clipboard-history": {
+    "icon": "󰅇",
+    "label": "Clipboard History",
+    "action": "gran-shell shell summon gran.clipboard"
+  },
+  "trigger.reminder": {
+    "icon": "󰢌",
+    "label": "Reminder",
+    "aliases": [
+      "reminder"
+    ]
+  },
+  "trigger.capture": {
+    "icon": "",
+    "label": "Capture",
+    "aliases": [
+      "capture",
+      "screenshot",
+      "screenrecord",
+      "screen-record",
+      "screenrecording"
+    ]
+  },
+  "trigger.capture.screenshot": {
+    "icon": "",
+    "label": "Screenshot",
+    "action": "gran-capture-screenshot"
+  },
+  "trigger.capture.screenrecord.stop": {
+    "icon": "",
+    "label": "Stop Screenrecording",
+    "when": "gran-capture-screenrecording --status",
+    "action": "gran-capture-screenrecording --stop-recording"
+  },
+  "trigger.capture.screenrecord": {
+    "icon": "",
+    "label": "Screenrecord"
+  },
+  "trigger.capture.text": {
+    "icon": "󰴑",
+    "label": "Text",
+    "action": "gran-capture-text"
+  },
+  "trigger.capture.qr": {
+    "icon": "󰐲",
+    "label": "QR Code",
+    "action": "gran-capture-qr"
+  },
+  "trigger.capture.color": {
+    "icon": "󰃉",
+    "label": "Color",
+    "action": "pkill hyprpicker || hyprpicker -a"
+  },
+  "trigger.capture.screenrecord.no-audio": {
+    "icon": "",
+    "label": "With no audio",
+    "action": "gran-capture-screenrecording"
+  },
+  "trigger.capture.screenrecord.desktop-audio": {
+    "icon": "",
+    "label": "With desktop audio",
+    "action": "gran-capture-screenrecording --with-desktop-audio"
+  },
+  "trigger.capture.screenrecord.microphone": {
+    "icon": "",
+    "label": "With desktop + microphone audio",
+    "action": "gran-capture-screenrecording --with-desktop-audio --with-microphone-audio"
+  },
+  "trigger.capture.screenrecord.webcam": {
+    "icon": "",
+    "label": "With desktop + microphone audio + webcam",
+    "when": "gran-hw-webcam",
+    "action": "gran-capture-screenrecording-with-webcam"
+  },
+  "trigger.transcode": {
+    "icon": "󰧸",
+    "label": "Transcode",
+    "action": "gran-transcode"
+  },
+  "trigger.share": {
+    "icon": "",
+    "label": "Share",
+    "aliases": [
+      "share"
+    ]
+  },
+  "trigger.hardware": {
+    "icon": "",
+    "label": "Hardware",
+    "aliases": [
+      "hardware",
+      "hw"
+    ]
+  },
+  "trigger.tests": {
+    "icon": "󰓅",
+    "label": "Speed Test"
+  },
+  "trigger.hardware.laptop-display-on": {
+    "icon": "󰛧",
+    "label": "Laptop Display On",
+    "when": "gran-hw-laptop && gran-hyprland-toggle-enabled internal-monitor-disable",
+    "action": "gran-hyprland-monitor-internal toggle"
+  },
+  "trigger.hardware.laptop-display-off": {
+    "icon": "󰛧",
+    "label": "Laptop Display Off",
+    "when": "gran-hw-laptop && ! gran-hyprland-toggle-enabled internal-monitor-disable",
+    "action": "gran-hyprland-monitor-internal toggle"
+  },
+  "trigger.hardware.mirror-display-on": {
+    "icon": "󰍹",
+    "label": "Display Mirroring On",
+    "when": "gran-hw-laptop && ! gran-hyprland-toggle-enabled internal-monitor-mirror",
+    "action": "gran-hyprland-monitor-internal-mirror toggle"
+  },
+  "trigger.hardware.mirror-display-off": {
+    "icon": "󰍹",
+    "label": "Display Mirroring Off",
+    "when": "gran-hw-laptop && gran-hyprland-toggle-enabled internal-monitor-mirror",
+    "action": "gran-hyprland-monitor-internal-mirror toggle"
+  },
+  "trigger.hardware.hybrid-gpu-on": {
+    "icon": "",
+    "label": "Switch to Hybrid GPU",
+    "when": "gran-hw-hybrid-gpu && ! grep -q '\"mode\": \"Hybrid\"' /etc/supergfxd.conf",
+    "action": "gran-launch-floating-terminal-with-presentation gran-toggle-hybrid-gpu"
+  },
+  "trigger.hardware.hybrid-gpu-off": {
+    "icon": "",
+    "label": "Switch to Integrated GPU",
+    "when": "gran-hw-hybrid-gpu && grep -q '\"mode\": \"Hybrid\"' /etc/supergfxd.conf",
+    "action": "gran-launch-floating-terminal-with-presentation gran-toggle-hybrid-gpu"
+  },
+  "trigger.hardware.touchpad-on": {
+    "icon": "󰟸",
+    "label": "Enable Touchpad",
+    "when": "gran-hw-touchpad && [[ -f ~/.local/state/gran/toggles/hypr/touchpad-disabled-name ]]",
+    "action": "gran-toggle-touchpad"
+  },
+  "trigger.hardware.touchpad-off": {
+    "icon": "󰟸",
+    "label": "Disable Touchpad",
+    "when": "gran-hw-touchpad && [[ ! -f ~/.local/state/gran/toggles/hypr/touchpad-disabled-name ]]",
+    "action": "gran-toggle-touchpad"
+  },
+  "trigger.hardware.touchpad-haptics": {
+    "icon": "󰌌",
+    "label": "Touchpad Haptics"
+  },
+  "trigger.hardware.touchpad-haptics.low": {
+    "icon": "󰌌",
+    "label": "low",
+    "when": "gran-hw-dell-xps-haptic-touchpad && gran-cmd-present dell-xps-touchpad-haptics",
+    "checked": "[[ \"$(dell-xps-touchpad-haptics get)\" == \"low\" ]]",
+    "action": "dell-xps-touchpad-haptics set low"
+  },
+  "trigger.hardware.touchpad-haptics.mid": {
+    "icon": "󰌌",
+    "label": "mid",
+    "when": "gran-hw-dell-xps-haptic-touchpad && gran-cmd-present dell-xps-touchpad-haptics",
+    "checked": "[[ \"$(dell-xps-touchpad-haptics get)\" == \"mid\" ]]",
+    "action": "dell-xps-touchpad-haptics set mid"
+  },
+  "trigger.hardware.touchpad-haptics.high": {
+    "icon": "󰌌",
+    "label": "high",
+    "when": "gran-hw-dell-xps-haptic-touchpad && gran-cmd-present dell-xps-touchpad-haptics",
+    "checked": "[[ \"$(dell-xps-touchpad-haptics get)\" == \"high\" ]]",
+    "action": "dell-xps-touchpad-haptics set high"
+  },
+  "trigger.hardware.touchscreen-on": {
+    "icon": "󰆽",
+    "label": "Enable Touchscreen",
+    "when": "gran-hw-touchscreen && [[ -f ~/.local/state/gran/toggles/hypr/touchscreen-disabled-name ]]",
+    "action": "gran-toggle-touchscreen"
+  },
+  "trigger.hardware.touchscreen-off": {
+    "icon": "󰆽",
+    "label": "Disable Touchscreen",
+    "when": "gran-hw-touchscreen && [[ ! -f ~/.local/state/gran/toggles/hypr/touchscreen-disabled-name ]]",
+    "action": "gran-toggle-touchscreen"
+  },
+  "trigger.reminder.set": {
+    "icon": "󰢌",
+    "label": "Set one",
+    "aliases": [
+      "reminder-set",
+      "remind"
+    ],
+    "action": "gran-reminder -i"
+  },
+  "trigger.reminder.show": {
+    "icon": "󰢌",
+    "label": "Show all",
+    "action": "gran-reminder show"
+  },
+  "trigger.reminder.clear": {
+    "icon": "󰢌",
+    "label": "Clear all",
+    "action": "gran-reminder clear"
+  },
+  "trigger.share.clipboard": {
+    "icon": "",
+    "label": "Clipboard",
+    "action": "gran-menu-share clipboard"
+  },
+  "trigger.share.file": {
+    "icon": "",
+    "label": "File",
+    "action": "gran-menu-share file"
+  },
+  "trigger.share.folder": {
+    "icon": "",
+    "label": "Folder",
+    "action": "gran-menu-share folder"
+  },
+  "trigger.share.receive": {
+    "icon": "󰥦",
+    "label": "Receive",
+    "action": "uwsm-app -- localsend"
+  },
+  "trigger.tests.network-speedtest": {
+    "icon": "󰓅",
+    "label": "Network Speed Test",
+    "action": "gran-shell shell summon gran.speedtest"
+  },
+  "trigger.tests.disk-speedtest": {
+    "icon": "󰋊",
+    "label": "Disk Speed Test",
+    "action": "gran-shell shell summon gran.disk-speedtest"
+  },
+  "setup.monitors": {
+    "label": "Monitors",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran setup monitors'"
+  },
+  "setup.keybindings": {
+    "label": "Keybindings",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran setup bindings'"
+  },
+  "setup.input": {
+    "label": "Input",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran setup input'"
+  },
+  "setup.typing": {
+    "icon": "",
+    "label": "Typing"
+  },
+  "setup.language": {
+    "label": "Interface Language",
+    "provider": "languages"
+  },
+  "setup.network": {
+    "icon": "󰛳",
+    "label": "Network",
+    "aliases": [
+      "network"
+    ]
+  },
+  "setup.network.dns": {
+    "icon": "󰇖",
+    "label": "DNS",
+    "aliases": [
+      "dns"
+    ]
+  },
+  "setup.network.dns.dhcp": {
+    "icon": "󰩟",
+    "label": "DHCP",
+    "checked": "[[ \"$(gran-dns)\" == \"DHCP\" ]]",
+    "action": "gran-dns DHCP"
+  },
+  "setup.network.dns.cloudflare": {
+    "icon": "󰅟",
+    "label": "Cloudflare",
+    "checked": "[[ \"$(gran-dns)\" == \"Cloudflare\" ]]",
+    "action": "gran-dns Cloudflare"
+  },
+  "setup.network.dns.google": {
+    "icon": "󰊭",
+    "label": "Google",
+    "checked": "[[ \"$(gran-dns)\" == \"Google\" ]]",
+    "action": "gran-dns Google"
+  },
+  "setup.network.dns.custom": {
+    "icon": "",
+    "label": "Custom",
+    "checked": "[[ \"$(gran-dns)\" == \"Custom\" ]]",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran-dns Custom'"
+  },
+  "setup.network.qr": {
+    "icon": "󰐲",
+    "label": "QR Code",
+    "aliases": [
+      "wifi-qr"
+    ],
+    "when": "gran-network-wifi-connected",
+    "action": "gran-shell shell summon gran.wifiqr"
+  },
+  "setup.default": {
+    "icon": "",
+    "label": "Defaults",
+    "aliases": [
+      "default",
+      "defaults"
+    ]
+  },
+  "setup.plugin": {
+    "icon": "󰐱",
+    "label": "Plugins",
+    "aliases": [
+      "plugin",
+      "plugins"
+    ]
+  },
+  "setup.plugin.enable": {
+    "icon": "󰄬",
+    "label": "Enable Plugin",
+    "action": "gran-menu-plugin enable"
+  },
+  "setup.plugin.disable": {
+    "icon": "󰅖",
+    "label": "Disable Plugin",
+    "action": "gran-menu-plugin disable"
+  },
+  "setup.plugin.add": {
+    "icon": "󰖟",
+    "label": "Add Plugin",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran-plugin-add'"
+  },
+  "setup.plugin.clone": {
+    "icon": "󰆏",
+    "label": "Clone Plugin",
+    "action": "gran-menu-plugin clone"
+  },
+  "setup.plugin.remove": {
+    "icon": "󰭌",
+    "label": "Remove Plugin",
+    "when": "compgen -G \"$HOME/.config/gran/plugins/*/manifest.json\"",
+    "action": "gran-menu-plugin remove"
+  },
+  "setup.security": {
+    "icon": "",
+    "label": "Security"
+  },
+  "setup.config": {
+    "icon": "",
+    "label": "Config"
+  },
+  "setup.config.hyprland": {
+    "icon": "",
+    "label": "Hyprland",
+    "action": "gran-launch-config-editor \"$HOME/.config/hypr/hyprland.lua\""
+  },
+  "setup.config.hyprsunset": {
+    "icon": "",
+    "label": "Hyprsunset",
+    "action": "gran-launch-config-editor ~/.config/hypr/hyprsunset.conf && gran-restart-hyprsunset"
+  },
+  "setup.config.xcompose": {
+    "icon": "󰞅",
+    "label": "XCompose",
+    "action": "gran-launch-config-editor ~/.XCompose && gran-restart-xcompose"
+  },
+  "update.gran": {
+    "label": "Gran",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran update'",
+    "icon": ""
+  },
+  "update.config": {
+    "icon": "",
+    "label": "Config",
+    "title": "Reset to default"
+  },
+  "update.themes": {
+    "icon": "󰸌",
+    "label": "Extra Themes",
+    "when": "gran-theme-extras",
+    "action": "gran-launch-floating-terminal-with-presentation gran-theme-update"
+  },
+  "update.process": {
+    "icon": "",
+    "label": "Process",
+    "title": "Restart"
+  },
+  "update.hardware": {
+    "icon": "󰇅",
+    "label": "Hardware",
+    "title": "Restart"
+  },
+  "update.password": {
+    "icon": "",
+    "label": "Password"
+  },
+  "update.timezone": {
+    "icon": "",
+    "label": "Timezone",
+    "action": "gran-menu-timezone"
+  },
+  "update.process.hyprsunset": {
+    "icon": "",
+    "label": "Hyprsunset",
+    "action": "gran-restart-hyprsunset"
+  },
+  "update.process.shell": {
+    "icon": "󰍜",
+    "label": "Shell",
+    "action": "gran-restart-shell"
+  },
+  "update.config.hyprland": {
+    "icon": "",
+    "label": "Hyprland",
+    "action": "gran-launch-floating-terminal-with-presentation gran-refresh-hyprland"
+  },
+  "update.config.hyprsunset": {
+    "icon": "",
+    "label": "Hyprsunset",
+    "action": "gran-launch-floating-terminal-with-presentation gran-refresh-hyprsunset"
+  },
+  "update.config.plymouth": {
+    "icon": "󱣴",
+    "label": "Plymouth",
+    "action": "gran-launch-floating-terminal-with-presentation gran-refresh-plymouth"
+  },
+  "update.config.tmux": {
+    "icon": "",
+    "label": "Tmux",
+    "action": "gran-launch-floating-terminal-with-presentation gran-refresh-tmux"
+  },
+  "update.config.shell": {
+    "icon": "󰍜",
+    "label": "Shell",
+    "action": "gran-launch-floating-terminal-with-presentation gran-refresh-shell"
+  },
+  "update.hardware.audio": {
+    "icon": "",
+    "label": "Audio",
+    "action": "gran-launch-floating-terminal-with-presentation gran-restart-audio"
+  },
+  "update.hardware.wifi": {
+    "icon": "󱚾",
+    "label": "Wi-Fi",
+    "action": "gran-launch-floating-terminal-with-presentation gran-restart-wifi"
+  },
+  "update.hardware.bluetooth": {
+    "icon": "󰂯",
+    "label": "Bluetooth",
+    "action": "gran-launch-floating-terminal-with-presentation gran-restart-bluetooth"
+  },
+  "update.hardware.trackpad": {
+    "icon": "󰟸",
+    "label": "Trackpad",
+    "action": "gran-launch-floating-terminal-with-presentation gran-restart-trackpad"
+  },
+  "update.password.user": {
+    "icon": "",
+    "label": "User",
+    "action": "gran-launch-floating-terminal-with-presentation passwd"
+  },
+  "setup.typing.keyboard": {
+    "label": "Keyboard Layout",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran setup keyboard'"
+  },
+  "setup.config.git": {
+    "label": "Git",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran setup git'"
+  },
+  "setup.timezone": {
+    "label": "Timezone",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran setup timezone'"
+  },
+  "setup.power": {
+    "label": "Notebook Power Policy",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran setup power'"
+  },
+  "setup.kitty": {
+    "label": "Kitty",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran setup kitty'"
+  },
+  "setup.fish": {
+    "label": "Fish",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran setup fish'"
+  },
+  "setup.network.connections": {
+    "label": "Connections / Wi-Fi",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran setup network'"
+  },
+  "setup.security.password": {
+    "label": "User Password",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran setup password'"
+  },
+  "setup.security.fingerprint": {
+    "label": "Enroll Fingerprint",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran setup fingerprint'"
+  },
+  "setup.security.sshd": {
+    "label": "SSH Server",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran setup sshd'"
+  },
+  "setup.printing": {
+    "label": "Printers",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran setup printing'"
+  },
+  "setup.default.agent": {
+    "label": "Agent",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran setup default-agent'"
+  },
+  "setup.default.browser": {
+    "label": "Browser",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran setup default-browser'"
+  },
+  "setup.default.terminal": {
+    "label": "Terminal",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran setup default-terminal'"
+  },
+  "setup.default.editor": {
+    "label": "Editor",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran setup default-editor'"
+  },
+  "setup.palette": {
+    "label": "Synchronize App Colors",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran theme sync'"
+  },
+  "install": {
+    "label": "Install",
+    "icon": "󰉉"
+  },
+  "install.package": {
+    "label": "Package",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran pkg install'",
+    "icon": "󰣇"
+  },
+  "install.webapp": {
+    "label": "Web App",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran webapp install'",
+    "icon": ""
+  },
+  "install.aur": {
+    "label": "AUR",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran pkg aur install'",
+    "icon": "󰣇"
+  },
+  "install.tui": {
+    "label": "TUI / Command-line Package",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran pkg install'"
+  },
+  "install.style": {
+    "label": "Style"
+  },
+  "install.style.theme": {
+    "label": "Theme from Git",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran theme install'"
+  },
+  "install.style.background": {
+    "label": "Background",
+    "action": "gran-theme-bg-install"
+  },
+  "install.browser": {
+    "label": "Browser"
+  },
+  "install.browser.chromium": {
+    "label": "Chromium",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran install browser chromium'"
+  },
+  "install.browser.firefox": {
+    "label": "Firefox",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran install browser firefox'"
+  },
+  "install.browser.zen": {
+    "label": "Zen",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran install browser zen'"
+  },
+  "install.terminal": {
+    "label": "Terminal"
+  },
+  "install.terminal.kitty": {
+    "label": "Kitty",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran install terminal kitty'"
+  },
+  "install.terminal.foot": {
+    "label": "Foot",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran install terminal foot'"
+  },
+  "install.terminal.alacritty": {
+    "label": "Alacritty",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran install terminal alacritty'"
+  },
+  "install.terminal.ghostty": {
+    "label": "Ghostty",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran install terminal ghostty'"
+  },
+  "install.editor": {
+    "label": "Editor"
+  },
+  "install.editor.nano": {
+    "label": "Nano",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran install editor nano'"
+  },
+  "install.editor.neovim": {
+    "label": "Neovim",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran install editor neovim'"
+  },
+  "install.editor.vim": {
+    "label": "Vim",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran install editor vim'"
+  },
+  "install.editor.helix": {
+    "label": "Helix",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran install editor helix'"
+  },
+  "install.editor.code": {
+    "label": "Code",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran install editor code'"
+  },
+  "install.editor.zed": {
+    "label": "Zed",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran install editor zed'"
+  },
+  "install.service": {
+    "label": "Services"
+  },
+  "install.service.docker": {
+    "label": "Docker",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran install service docker'"
+  },
+  "install.service.podman": {
+    "label": "Podman",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran install service podman'"
+  },
+  "install.service.cups": {
+    "label": "CUPS",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran install service cups'"
+  },
+  "install.service.openssh": {
+    "label": "OpenSSH",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran install service openssh'"
+  },
+  "install.service.flatpak": {
+    "label": "Flatpak",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran install service flatpak'"
+  },
+  "install.service.fprintd": {
+    "label": "Fingerprint",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran install service fprintd'"
+  },
+  "install.font": {
+    "label": "Fonts"
+  },
+  "install.font.ttf-jetbrains-mono-nerd": {
+    "label": "JetBrains Mono Nerd",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran install font ttf-jetbrains-mono-nerd'"
+  },
+  "install.font.ttf-firacode-nerd": {
+    "label": "Fira Code Nerd",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran install font ttf-firacode-nerd'"
+  },
+  "install.font.ttf-cascadia-mono-nerd": {
+    "label": "Cascadia Mono Nerd",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran install font ttf-cascadia-mono-nerd'"
+  },
+  "install.font.ttf-iosevka-nerd": {
+    "label": "Iosevka Nerd",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran install font ttf-iosevka-nerd'"
+  },
+  "install.gaming": {
+    "label": "Gaming"
+  },
+  "install.gaming.retroarch": {
+    "label": "RetroArch",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran install gaming retroarch'"
+  },
+  "install.gaming.lutris": {
+    "label": "Lutris",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran install gaming lutris'"
+  },
+  "install.gaming.steam": {
+    "label": "Steam (multilib)",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran install gaming steam'",
+    "when": "pacman-conf --repo-list | grep -qx multilib"
+  },
+  "install.development": {
+    "label": "Development"
+  },
+  "install.development.node": {
+    "label": "Node.js LTS",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran install development node'"
+  },
+  "install.development.python": {
+    "label": "Python",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran install development python'"
+  },
+  "install.development.go": {
+    "label": "Go",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran install development go'"
+  },
+  "install.development.ruby": {
+    "label": "Ruby",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran install development ruby'"
+  },
+  "install.development.rust": {
+    "label": "Rust",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran install development rust'"
+  },
+  "install.development.java": {
+    "label": "Java",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran install development java'"
+  },
+  "install.development.bun": {
+    "label": "Bun",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran install development bun'"
+  },
+  "install.development.deno": {
+    "label": "Deno",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran install development deno'"
+  },
+  "install.development.php": {
+    "label": "PHP",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran install development php'"
+  },
+  "install.development.elixir": {
+    "label": "Elixir",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran install development elixir'"
+  },
+  "install.development.zig": {
+    "label": "Zig",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran install development zig'"
+  },
+  "install.ai": {
+    "label": "AI"
+  },
+  "install.ai.codex": {
+    "label": "Codex CLI",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran install ai codex'"
+  },
+  "install.ai.opencode": {
+    "label": "OpenCode",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran install ai opencode'"
+  },
+  "remove": {
+    "label": "Remove",
+    "icon": "󰭌",
+    "aliases": [
+      "uninstall"
+    ]
+  },
+  "remove.package": {
+    "label": "Package",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran pkg remove'"
+  },
+  "remove.webapp": {
+    "label": "Web App",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran webapp remove'"
+  },
+  "remove.theme": {
+    "label": "Theme",
+    "action": "gran-theme-remove"
+  },
+  "remove.plugin": {
+    "label": "Plugin",
+    "action": "gran-menu-plugin remove"
+  },
+  "update.palette": {
+    "label": "App Colors",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran theme sync'"
+  },
+  "learn.gran": {
+    "label": "Gran Commands",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran commands'"
+  },
+  "learn.skills": {
+    "label": "AI Skills",
+    "action": "gran-launch-floating-terminal-with-presentation 'gran skills list'"
+  }
+}

@@ -1,0 +1,244 @@
+#!/bin/bash
+# Makes Fathom's artwork from the plugin's own QML: tests/qml/art renders the
+# field offscreen (the real controller and view, stand-in apps), and this
+# script composes it the way the compositor shows it, over a blurred desktop.
+#
+#   preview.webp               the marketplace preview (1920x1080)
+#   docs/media/banner.webp     the README banner (1600x600)
+#                              (both: the field in three themes, stacked
+#                              like Fathom's cards, in deep water)
+#   docs/media/themes.webp     four Gran themes, two dark, two light
+#   docs/media/demo.webp       the demo for the README, compact (1120 px,
+#                              12 fps): GitHub serves release assets as
+#                              octet-stream with nosniff, which no browser
+#                              shows as an image, so it is tracked
+#   screenshots-local/art/fathom-demo.gif
+#                              the demo to share, published as a release
+#                              asset so it
+#                              are not in every install's clone
+#
+# Needs qmltestrunner (qt6-declarative), ImageMagick 7, ffmpeg and the Yaru
+# icons and JetBrains Mono that Gran ships. Renders in software: no card
+# shadows. Changes nothing outside this checkout and runs no desktop command.
+
+set -euo pipefail
+
+project_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+readonly project_root
+readonly raw="$project_root/screenshots-local/art"
+readonly font_bold=/usr/share/fonts/TTF/JetBrainsMonoNerdFont-Bold.ttf
+readonly font_regular=/usr/share/fonts/TTF/JetBrainsMonoNerdFont-Regular.ttf
+
+runner=/usr/lib/qt6/bin/qmltestrunner
+for tool in "$runner" magick ffmpeg; do
+  command -v "$tool" >/dev/null 2>&1 || { printf 'make-art: %s is missing\n' "$tool" >&2; exit 1; }
+done
+[[ -f $font_bold ]] || { printf 'make-art: JetBrains Mono is missing\n' >&2; exit 1; }
+
+work=$(mktemp -d)
+trap 'rm -rf "$work"' EXIT
+
+rm -rf "$raw"
+mkdir -p "$work/src" "$work/tests" "$raw/demo" "$raw/composed" "$project_root/docs/media"
+cp "$project_root"/src/*.qml "$project_root"/src/*.js "$work/src/"
+cp "$project_root/tests/qml/FieldSurface.qml" "$work/src/FieldSurface.qml"
+sed "s|@OUT@|$raw|" "$project_root/tests/qml/art/tst_art.qml" > "$work/tests/tst_art.qml"
+
+printf 'Rendering...\n'
+QT_QPA_PLATFORM=offscreen "$runner" -import "$project_root/tests/qml/stubs" -input "$work/tests" "$@" \
+  | grep -E '^(PASS|FAIL|Totals)' || true
+[[ -f $raw/field-tokyo-night.png ]] || { printf 'make-art: the render failed\n' >&2; exit 1; }
+
+# What Hyprland does behind the layer: a blur, a touch of vibrancy.
+blurred() {
+  magick "$1" -blur 0x16 -modulate 100,112 "$2"
+}
+for desktop in tokyo-night tokyo-night-photos rose-pine rose-pine-photos gruvbox catppuccin-latte; do
+  blurred "$raw/desktop-$desktop.png" "$raw/desktop-$desktop-blur.png"
+done
+
+# A field over its blurred desktop: what the screen shows.
+for theme in tokyo-night rose-pine gruvbox catppuccin-latte; do
+  magick "$raw/desktop-$theme-blur.png" "$raw/field-$theme.png" -compose over -composite "$raw/still-$theme.png"
+done
+
+# The heroes (the README banner and the marketplace preview) are a Deep of
+# their own: the field in three themes, one behind the other, receding into
+# deep water lit from the surface.
+readonly deep='#070a14'
+
+# The water: surface light fading into the deep, a few rays, drifting
+# particles, and a glow where the cards sit. $1 width, $2 height, $3 out,
+# $4 glow x, $5 glow y, $6 glow size.
+water() {
+  local width=$1 height=$2 out=$3 glow_x=$4 glow_y=$5 glow=$6
+  local rays="" particles="" i x y r a
+  for i in 0 1 2 3 4; do
+    x=$((width * (8 + i * 19) / 100))
+    rays+=" polygon $x,0 $((x + width * (4 + i % 3) / 100)),0 $((x + width * (26 + i * 3) / 100)),$height $((x + width * (14 + i * 2) / 100)),$height"
+  done
+  RANDOM=7
+  for i in $(seq 1 $((width * height / 9000))); do
+    x=$((RANDOM % width)); y=$((RANDOM % height)); r=$((1 + RANDOM % 3)); a=$((12 + RANDOM % 40))
+    particles+=" fill rgba(200,214,255,0.$(printf '%02d' "$a")) circle $x,$y $((x + r)),$y"
+  done
+  magick -size "${width}x${height}" gradient:'#1d2748-#070a14' \
+    \( -size "${width}x${height}" xc:none -fill 'rgba(170,196,255,0.09)' -draw "$rays" -blur 0x34 \) -compose screen -composite \
+    \( -size "${glow}x${glow}" radial-gradient:'rgba(122,162,247,0.38)-rgba(122,162,247,0)' \) \
+      -geometry "+$((glow_x - glow / 2))+$((glow_y - glow / 2))" -compose screen -composite \
+    \( -size "${width}x${height}" xc:none -draw "$particles" -blur 0x0.6 \) -compose over -composite \
+    \( -size "${width}x$((height / 9))" gradient:'rgba(210,225,255,0.10)-rgba(210,225,255,0)' \) -geometry +0+0 -compose screen -composite \
+    "$out"
+}
+
+# One card of the stack: a still at width $2, rounded, edged, fogged $3 % into
+# the deep, with its shadow. $4 out.
+card() {
+  local still=$1 width=$2 fog=$3 out=$4 height radius
+  height=$((width * 9 / 16))
+  radius=$((width / 55))
+  magick "$still" -resize "${width}x${height}!" -fill "$deep" -colorize "$fog" \
+    \( +clone -alpha extract -fill black -colorize 100 -fill white \
+       -draw "roundrectangle 0,0 $((width - 1)),$((height - 1)) $radius,$radius" \) \
+    -alpha off -compose copy-opacity -composite \
+    -fill none -stroke 'rgba(200,214,255,0.28)' -strokewidth 2 \
+    -draw "roundrectangle 1,1 $((width - 2)),$((height - 2)) $radius,$radius" \
+    \( +clone -background black -shadow "75x$((width / 34))+0+$((width / 40))" \) +swap \
+    -background none -compose over -layers merge +repage "$out"
+}
+
+# The wordmark, lit from above. $1 point size, $2 out.
+wordmark() {
+  local size
+  magick -background none -font "$font_bold" -pointsize "$1" -fill white label:'Fathom' -trim +repage "$raw/word-mask.png"
+  size=$(magick identify -format '%wx%h' "$raw/word-mask.png")
+  magick -size "$size" gradient:'#f2f4ff-#8fb0ff' "$raw/word-mask.png" -compose copy-opacity -composite \
+    \( +clone -background '#7aa2f7' -shadow 55x16+0+0 \) +swap -background none -compose over -layers merge +repage "$2"
+}
+
+# A key cap. $1 label, $2 point size, $3 out.
+keycap() {
+  local size=$2 width height
+  width=$((size * (${#1} * 6 + 12) / 10))
+  height=$((size * 2))
+  magick -size "${width}x${height}" xc:none -fill '#1f2540' -stroke '#3d4a7a' -strokewidth 2 \
+    -draw "roundrectangle 1,1 $((width - 2)),$((height - 2)) $((size / 2)),$((size / 2))" \
+    -stroke none -fill '#dfe5ff' -font "$font_bold" -pointsize "$size" -gravity center -annotate +0+0 "$1" "$3"
+}
+
+# The sounding line, from the surface down. $1 height, $2 lead depth (0-1), $3 out.
+gauge() {
+  local height=$1 lead=$2 out=$3 marks="" y i
+  for i in 0 1 2 3 4 5 6 7 8; do
+    y=$((20 + (height - 40) * i / 8))
+    marks+=" line $((i % 2 == 0 ? 26 : 29)),$y $((i % 2 == 0 ? 46 : 43)),$y"
+  done
+  y=$((20 + (height - 40) * lead / 100))
+  magick -size "60x${height}" xc:none \
+    -stroke 'rgba(160,176,230,0.30)' -strokewidth 2 -draw "line 36,20 36,$((height - 20))" \
+    -stroke 'rgba(160,176,230,0.45)' -draw "$marks" \
+    -stroke '#7aa2f7' -strokewidth 3 -draw "line 36,20 36,$y" -stroke none \
+    -fill '#7aa2f7' -draw "polygon 36,$((y - 11)) 47,$y 36,$((y + 11)) 25,$y" "$out"
+}
+
+# Where to put a card image (shadow included) so the card itself has its
+# top left corner at $2,$3; $1 is the card's width (see card).
+at() {
+  local sigma=$(($1 / 34))
+  printf '+%d+%d' $(($2 - 2 * sigma)) $(($3 - 2 * sigma + $1 / 40))
+}
+
+printf 'docs/media/banner.webp\n'
+card "$raw/still-gruvbox.png" 540 40 "$raw/card-back.png"
+card "$raw/still-rose-pine.png" 620 16 "$raw/card-middle.png"
+card "$raw/still-tokyo-night.png" 700 0 "$raw/card-front.png"
+wordmark 124 "$raw/word-banner.png"
+keycap Alt 19 "$raw/key-alt.png"
+keycap Tab 19 "$raw/key-tab.png"
+gauge 440 38 "$raw/gauge-banner.png"
+water 1600 600 "$raw/water-banner.png" 1180 320 1100
+magick "$raw/water-banner.png" \
+  "$raw/card-back.png" -geometry "$(at 540 1026 20)" -compose over -composite \
+  "$raw/card-middle.png" -geometry "$(at 620 884 82)" -compose over -composite \
+  "$raw/card-front.png" -geometry "$(at 700 742 150)" -compose over -composite \
+  "$raw/gauge-banner.png" -geometry +52+80 -compose over -composite \
+  -font "$font_bold" -pointsize 15 -fill '#7aa2f7' -kerning 5 -annotate +134+150 'GRAN PLUGIN' -kerning 0 \
+  "$raw/word-banner.png" -geometry +124+168 -compose over -composite \
+  -font "$font_regular" -pointsize 33 -fill '#c8d1f5' \
+  -annotate +134+352 'Alt+Tab that dives' -annotate +134+396 'through time.' \
+  "$raw/key-alt.png" -geometry +134+432 -compose over -composite \
+  -font "$font_regular" -pointsize 22 -fill '#5d6a99' -annotate +224+458 '+' \
+  "$raw/key-tab.png" -geometry +252+432 -compose over -composite \
+  -pointsize 16 -fill '#6f7cab' -annotate +134+532 'Depth by recency  ·  every workspace  ·  any theme' \
+  -quality 92 "$project_root/docs/media/banner.webp"
+
+printf 'preview.webp\n'
+card "$raw/still-gruvbox.png" 820 40 "$raw/card-back-large.png"
+card "$raw/still-rose-pine.png" 930 16 "$raw/card-middle-large.png"
+card "$raw/still-tokyo-night.png" 1040 0 "$raw/card-front-large.png"
+wordmark 176 "$raw/word-preview.png"
+keycap Alt 28 "$raw/key-alt-large.png"
+keycap Tab 28 "$raw/key-tab-large.png"
+gauge 760 44 "$raw/gauge-preview.png"
+water 1920 1080 "$raw/water-preview.png" 1340 660 1500
+magick "$raw/water-preview.png" \
+  "$raw/card-back-large.png" -geometry "$(at 820 1068 212)" -compose over -composite \
+  "$raw/card-middle-large.png" -geometry "$(at 930 928 320)" -compose over -composite \
+  "$raw/card-front-large.png" -geometry "$(at 1040 790 440)" -compose over -composite \
+  "$raw/gauge-preview.png" -geometry +56+150 -compose over -composite \
+  -font "$font_bold" -pointsize 22 -fill '#7aa2f7' -kerning 7 -annotate +140+232 'GRAN PLUGIN' -kerning 0 \
+  "$raw/word-preview.png" -geometry +132+262 -compose over -composite \
+  -font "$font_regular" -pointsize 48 -fill '#c8d1f5' \
+  -annotate +142+556 'Alt+Tab that dives' -annotate +142+620 'through time.' \
+  "$raw/key-alt-large.png" -geometry +142+688 -compose over -composite \
+  -font "$font_regular" -pointsize 32 -fill '#5d6a99' -annotate +272+726 '+' \
+  "$raw/key-tab-large.png" -geometry +312+688 -compose over -composite \
+  -pointsize 24 -fill '#7d89b8' \
+  -annotate +142+842 'Every window as deep as it is old.' \
+  -annotate +142+884 'Every workspace at a glance.' \
+  -annotate +142+926 'Any theme, light or dark.' \
+  -quality 90 "$project_root/preview.webp"
+
+printf 'docs/media/themes.webp\n'
+# Four themes Gran ships, two dark and two light, each over its desktop.
+for theme in tokyo-night rose-pine gruvbox catppuccin-latte; do
+  magick "$raw/still-$theme.png" -resize 780x439 \
+    \( +clone -alpha extract -fill black -colorize 100 -fill white -draw "roundrectangle 0,0 779,438 12,12" \) \
+    -alpha off -compose copy-opacity -composite \
+    \( -size 780x439 xc:none -fill none -stroke 'rgba(200,214,255,0.25)' -strokewidth 2 \
+       -draw "roundrectangle 1,1 778,437 12,12" \) -compose over -composite "$raw/tile-$theme.png"
+done
+magick -size 1600x940 xc:none \
+  "$raw/tile-tokyo-night.png" -geometry +14+14 -compose over -composite \
+  "$raw/tile-rose-pine.png" -geometry +806+14 -compose over -composite \
+  "$raw/tile-catppuccin-latte.png" -geometry +14+485 -compose over -composite \
+  "$raw/tile-gruvbox.png" -geometry +806+485 -compose over -composite \
+  -quality 88 "$project_root/docs/media/themes.webp"
+
+printf 'docs/media/demo.webp, fathom-demo.gif\n'
+n=0
+for frame in "$raw"/demo/f*.png; do
+  n=$((n + 1))
+  name=$(basename "$frame" .png)
+  blur=${name#*_b}
+  blur=$((10#${blur%%_*}))
+  desktop=${name##*_}
+  sharp="$raw/desktop-tokyo-night.png"
+  soft="$raw/desktop-tokyo-night-blur.png"
+  if [[ $desktop == photos ]]; then
+    sharp="$raw/desktop-tokyo-night-photos.png"
+    soft="$raw/desktop-tokyo-night-photos-blur.png"
+  fi
+  magick "$sharp" "$soft" -compose blend -define "compose:args=$blur" -composite \
+    "$frame" -compose over -composite -resize 1280x720 "$raw/composed/$(printf '%04d' "$n").png"
+done
+ffmpeg -loglevel error -y -framerate 15 -i "$raw/composed/%04d.png" \
+  -vf "fps=12,scale=1120:-1:flags=lanczos" \
+  -c:v libwebp_anim -lossless 0 -q:v 72 -preset picture -loop 0 "$project_root/docs/media/demo.webp"
+# Error diffusion keeps the gradients smooth where ordered dithering bands.
+ffmpeg -loglevel error -y -framerate 15 -i "$raw/composed/%04d.png" \
+  -vf "split[a][b];[a]palettegen=max_colors=256:stats_mode=full[p];[b][p]paletteuse=dither=sierra2_4a:diff_mode=rectangle" \
+  -loop 0 "$raw/fathom-demo.gif"
+
+du -h "$project_root/preview.webp" "$project_root/docs/media/banner.webp" "$project_root/docs/media/themes.webp" \
+  "$project_root/docs/media/demo.webp" "$raw/fathom-demo.gif"

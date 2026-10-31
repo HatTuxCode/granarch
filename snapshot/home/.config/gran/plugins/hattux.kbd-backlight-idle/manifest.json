@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "hattux.kbd-backlight-idle",
+  "name": "Keyboard Backlight Idle",
+  "version": "1.0.0",
+  "author": "hattux",
+  "description": "Turn off the keyboard backlight after 2 minutes idle and restore it on activity.",
+  "kinds": [
+    "service"
+  ],
+  "keepLoaded": true,
+  "entryPoints": {
+    "service": "Service.qml"
+  }
+}

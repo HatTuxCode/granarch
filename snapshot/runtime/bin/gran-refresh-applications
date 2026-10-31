@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# gran:summary=Ensure default application launchers are installed.
+
+# Copy .desktop declarations
+mkdir -p ~/.local/share/applications
+cp "$GRAN_PATH"/applications/*.desktop ~/.local/share/applications/
+
+if gran-cmd-present alacritty; then
+  cp "$GRAN_PATH/default/alacritty/Alacritty.desktop" ~/.local/share/applications/
+fi
+
+update-desktop-database ~/.local/share/applications

@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# gran:summary=Install an optional browser from its supported source
+# gran:group=install
+exec python3 "$GRAN_PATH/lib/control.py" install browser "$@"

@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# gran:summary=Cycle keyboard backlight brightness (off -> low -> medium -> high)
+
+set -euo pipefail
+
+DEVICE="asus::kbd_backlight"
+
+current=$(brightnessctl -d "$DEVICE" get 2>/dev/null || echo 0)
+max=$(brightnessctl -d "$DEVICE" max 2>/dev/null || echo 3)
+
+next=$(( (current + 1) % (max + 1) ))
+brightnessctl -d "$DEVICE" set "$next" >/dev/null 2>&1

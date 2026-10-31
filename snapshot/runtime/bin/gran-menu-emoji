@@ -1,0 +1,6 @@
+#!/bin/bash
+# gran:summary=Launch emojis
+# gran:group=menu
+# gran:examples=gran menu emoji
+
+gran-shell shell toggle gran.emojis

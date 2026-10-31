@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# gran:summary=Install an AUR recipe with an optional locally built yay helper
+exec python3 "$GRAN_PATH/lib/control.py" packages aur "$@"

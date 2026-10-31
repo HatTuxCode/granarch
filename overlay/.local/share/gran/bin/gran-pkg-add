@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# gran:summary=Install packages using the configured Arch repositories
+# gran:group=pkg
+# gran:args=[packages...]
+set -euo pipefail
+exec python3 "$GRAN_PATH/lib/control.py" packages install "$@"

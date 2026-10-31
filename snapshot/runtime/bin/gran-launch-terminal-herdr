@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# gran:summary=Launch or attach to the persistent herdr session in a terminal
+
+exec gran-launch-terminal herdr

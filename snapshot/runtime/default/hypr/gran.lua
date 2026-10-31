@@ -1,0 +1,30 @@
+-- Gran Hyprland setup: helpers, defaults, and current theme overrides.
+
+require("default.hypr.helpers")
+local require_optional = require("default.hypr.require_optional")
+
+-- Use Gran defaults, but don't edit these directly.
+require("default.hypr.autostart")
+require("default.hypr.monitor-workspaces")
+if _G.gran_default_bindings ~= false then
+  require("default.hypr.bindings.media")
+  require("default.hypr.bindings.clipboard")
+  require("default.hypr.bindings.input-method")
+  require("default.hypr.bindings.jis")
+  require("default.hypr.bindings.tiling")
+  require("default.hypr.bindings.utilities")
+  require("default.hypr.bindings.dictation")
+  require_optional.module("default.hypr.bindings.applications")
+end
+if _G.gran_default_gestures ~= false then
+  require("default.hypr.gestures")
+end
+require("default.hypr.envs")
+require("default.hypr.looknfeel")
+require("default.hypr.qconsole")
+require("default.hypr.input")
+require("default.hypr.windows")
+require("default.hypr.dictation-backend")
+
+-- Current theme overrides.
+require_optional.module("gran.current.theme.hyprland")

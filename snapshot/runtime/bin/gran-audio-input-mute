@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# gran:summary=Toggle microphone mute. Drives the hardware mic-mute LED on laptops that expose one.
+
+wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle >/dev/null
+
+if wpctl get-volume @DEFAULT_AUDIO_SOURCE@ | grep -q MUTED; then
+  gran-brightness-keyboard-mute on
+  gran-osd -i microphone-muted -m "$(gran-i18n audio.micMuted)"
+else
+  gran-brightness-keyboard-mute off
+  gran-osd -i microphone -m "$(gran-i18n audio.micOn)"
+fi

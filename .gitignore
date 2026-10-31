@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+dist/
+.test-output/
+vm/
+.publication/
+.aws/
+.codex/
+.agents/
+.env
+.env.*
+*.qcow2
+*.vdi
+*.vmdk
+*.iso

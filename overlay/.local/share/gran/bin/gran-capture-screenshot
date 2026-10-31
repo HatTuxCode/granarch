@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# gran:summary=Capture a screenshot with grim and slurp
+# gran:group=capture
+# gran:args=[smart|region|fullscreen] [copy|save]
+# gran:aliases=gran screenshot
+set -euo pipefail
+mode=${1:-region}
+action=${2:-copy}
+[[ $mode == smart ]] && mode=region
+[[ $mode == region || $mode == fullscreen ]] || { echo 'Usage: gran capture screenshot [region|fullscreen] [copy|save]' >&2; exit 2; }
+[[ $action == copy || $action == save ]] || exit 2
+directory="${XDG_PICTURES_DIR:-$HOME/Pictures}/Screenshots"
+mkdir -p "$directory"
+file="$directory/$(date +%Y%m%d-%H%M%S-%N).png"
+if [[ $mode == region ]]; then
+  region=$(slurp) || exit 0
+  grim -g "$region" "$file"
+else
+  grim "$file"
+fi
+[[ $action != copy ]] || wl-copy --type image/png < "$file"
+gran-notification-send 'Captura de tela' "$file" || true

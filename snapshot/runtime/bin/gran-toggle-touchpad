@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# gran:summary=Enable, disable, or toggle the touchpad
+# gran:args=[on|off|toggle]
+
+exec gran-toggle-input-device touchpad "${1:-toggle}"

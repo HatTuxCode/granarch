@@ -1,0 +1,155 @@
+#!/usr/bin/env python3
+# gran:summary=Install or update Zen and Yaru directly from their upstream projects
+# gran:args=<install|update|sources> [zen|yaru|installed]
+"""Upstream-only application delivery; never changes pacman repositories."""
+import argparse
+import hashlib
+import json
+import os
+from pathlib import Path
+import re
+import shutil
+import subprocess
+import tarfile
+import tempfile
+import urllib.request
+
+SOURCES = {
+    'zen': 'https://github.com/zen-browser/desktop',
+    'yaru': 'https://github.com/ubuntu/yaru',
+}
+
+
+def request(url):
+    return urllib.request.urlopen(urllib.request.Request(url, headers={
+        'User-Agent': 'GranArch/0.2', 'Accept': 'application/vnd.github+json'}), timeout=60)
+
+
+def api(url):
+    with request(url) as response:
+        data = response.read(4 * 1024 * 1024 + 1)
+    if len(data) > 4 * 1024 * 1024:
+        raise RuntimeError('Upstream metadata exceeds 4 MiB')
+    return json.loads(data)
+
+
+def extract(archive, destination):
+    with tarfile.open(archive) as source:
+        if sum(member.size for member in source.getmembers()) > 3 * 1024**3:
+            raise RuntimeError('Archive is too large')
+        source.extractall(destination, filter='data')
+
+
+def install_zen(home, old):
+    release = api('https://api.github.com/repos/zen-browser/desktop/releases/latest')
+    version = release['tag_name']
+    if not re.fullmatch(r'[A-Za-z0-9._-]+', version):
+        raise RuntimeError('Invalid upstream release name')
+    if old.get('version') == version and (home / '.local/share/gran/apps/zen/current/zen-bin').is_file():
+        print(f'Zen {version}: already installed')
+        return old
+    asset = next(item for item in release['assets'] if item['name'] == 'zen.linux-x86_64.tar.xz')
+    digest = asset.get('digest') or ''
+    if not re.fullmatch(r'sha256:[a-f0-9]{64}', digest):
+        # Some upstream releases publish checksums in their release notes instead.
+        match = re.search(r'([a-fA-F0-9]{64})\s+\*?zen\.linux-x86_64\.tar\.xz', release.get('body') or '')
+        if not match:
+            raise RuntimeError('Zen release has no SHA-256 digest; refusing an unchecked download')
+        digest = 'sha256:' + match[1].lower()
+    url = asset['browser_download_url']
+    if not url.startswith('https://github.com/zen-browser/desktop/releases/download/'):
+        raise RuntimeError('Unexpected Zen download origin')
+    base = home / '.local/share/gran/apps/zen'
+    base.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix='download-', dir=base) as temporary:
+        temporary = Path(temporary)
+        archive = temporary / 'zen.tar.xz'
+        checksum = hashlib.sha256()
+        with request(url) as response, archive.open('wb') as output:
+            received = 0
+            while chunk := response.read(1024 * 1024):
+                received += len(chunk)
+                if received > 1024**3:
+                    raise RuntimeError('Zen download exceeds 1 GiB')
+                checksum.update(chunk)
+                output.write(chunk)
+        if checksum.hexdigest() != digest.split(':', 1)[1]:
+            raise RuntimeError('Zen SHA-256 mismatch')
+        staging = temporary / 'unpacked'
+        staging.mkdir()
+        extract(archive, staging)
+        candidates = [path for path in staging.rglob('zen-bin') if path.is_file()]
+        if len(candidates) != 1:
+            raise RuntimeError('Could not identify the Zen binary')
+        directory = base / version
+        if directory.exists():
+            shutil.rmtree(directory)
+        shutil.move(str(candidates[0].parent), directory)
+        link = base / 'current.next'
+        link.unlink(missing_ok=True)
+        link.symlink_to(directory)
+        link.replace(base / 'current')
+    print(f'Zen {version}: installed from zen-browser/desktop')
+    return {'version': version, 'source': SOURCES['zen'], 'sha256': digest.split(':', 1)[1]}
+
+
+def install_yaru(home, old):
+    tags = api('https://api.github.com/repos/ubuntu/yaru/tags?per_page=1')
+    tag = tags[0]['name']
+    commit = tags[0]['commit']['sha']
+    if not re.fullmatch(r'[a-f0-9]{40}', commit):
+        raise RuntimeError('Invalid Yaru commit')
+    if old.get('commit') == commit and (home / '.local/share/icons/Yaru-blue').is_dir():
+        print(f'Yaru {tag}: already installed')
+        return old
+    cache = home / '.cache/gran/builds'
+    cache.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix='yaru-', dir=cache) as temporary:
+        source, build = Path(temporary) / 'source', Path(temporary) / 'build'
+        subprocess.run(['git', 'clone', '--filter=blob:none', '--no-checkout', '--no-tags',
+                        SOURCES['yaru'] + '.git', str(source)], check=True)
+        subprocess.run(['git', '-C', str(source), 'fetch', '--depth', '1', 'origin', commit], check=True)
+        subprocess.run(['git', '-C', str(source), 'checkout', '--detach', commit], check=True)
+        flags = ['-Dicons=true', '-Dgtk=true', '-Daccent-colors=blue', '-Ddark=true',
+                 '-Dgnome-shell=false', '-Dgtksourceview=false', '-Dmetacity=false',
+                 '-Dsounds=false', '-Dsessions=false', '-Dubuntu-unity=false',
+                 '-Dxfwm4=false', '-Dcinnamon-shell=false', '-Dmate=false', '-Dmate-dark=false']
+        subprocess.run(['meson', 'setup', str(build), str(source),
+                        '--prefix=' + str(home / '.local'), *flags], check=True)
+        subprocess.run(['meson', 'compile', '-C', str(build)], check=True)
+        subprocess.run(['meson', 'install', '-C', str(build)], check=True)
+    print(f'Yaru {tag}: installed from ubuntu/yaru')
+    return {'version': tag, 'commit': commit, 'source': SOURCES['yaru']}
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('action', choices=['install', 'update', 'sources'])
+    parser.add_argument('name', nargs='?', choices=[*SOURCES, 'installed'])
+    args = parser.parse_args()
+    if args.action == 'sources':
+        print(json.dumps(SOURCES, indent=2))
+        return
+    if os.geteuid() == 0:
+        parser.error('run as the target user, not root')
+    if args.name is None:
+        parser.error('an application name is required')
+    home = Path.home()
+    state_path = home / '.local/state/gran/apps.json'
+    state = json.loads(state_path.read_text()) if state_path.exists() else {}
+    names = list(state) if args.name == 'installed' else [args.name]
+    for name in names:
+        if name not in SOURCES:
+            raise RuntimeError(f'Unknown managed application: {name}')
+        state[name] = {'zen': install_zen, 'yaru': install_yaru}[name](home, state.get(name, {}))
+        state_path.parent.mkdir(parents=True, exist_ok=True)
+        temporary = state_path.with_suffix('.tmp')
+        temporary.write_text(json.dumps(state, indent=2) + '\n')
+        temporary.replace(state_path)
+
+
+if __name__ == '__main__':
+    try:
+        main()
+    except (RuntimeError, OSError, ValueError, KeyError, StopIteration, subprocess.CalledProcessError) as error:
+        raise SystemExit(f'gran app: {error}')

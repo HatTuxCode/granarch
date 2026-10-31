@@ -1,0 +1,34 @@
+#!/bin/bash
+
+# gran:summary=Enable or disable background intros
+# gran:args=<enable|disable|toggle|status>
+# gran:examples=gran theme bg intro toggle | gran theme bg intro disable
+
+set -euo pipefail
+
+toggle="$HOME/.local/state/gran/toggles/background-intros-off"
+case ${1:-} in
+  enable)
+    rm -f "$toggle"
+    gran-notification-send "$(gran-i18n theme.backgroundIntros)" "$(gran-i18n common.enabled)"
+    ;;
+  disable)
+    mkdir -p "$(dirname "$toggle")"
+    touch "$toggle"
+    gran-notification-send "$(gran-i18n theme.backgroundIntros)" "$(gran-i18n common.disabled)"
+    ;;
+  toggle)
+    if [[ -f $toggle ]]; then
+      gran-theme-bg-intro enable
+    else
+      gran-theme-bg-intro disable
+    fi
+    ;;
+  status)
+    [[ ! -f $toggle ]]
+    ;;
+  *)
+    echo "Usage: gran-theme-bg-intro <enable|disable|toggle|status>" >&2
+    exit 1
+    ;;
+esac

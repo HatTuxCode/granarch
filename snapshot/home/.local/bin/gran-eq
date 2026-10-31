@@ -1,0 +1,201 @@
+#!/usr/bin/env bash
+# gran-eq: Equalizador PipeWire de 5 bandas para o ZenBook 14 (UX425)
+# Uso: gran-eq [bass] [lowmid] [mid] [presence] [treble]
+# Exemplo: gran-eq 4 2 -1 3 3
+#          gran-eq 0 0 0 0 0    (flat / neutro)
+#          gran-eq              (mostra ganhos atuais)
+#
+# Bandas e frequências (divisão logarítmica 90Hz–11kHz, ~2 oitavas cada):
+#   bass      Graves       90 Hz   (low-shelf) - a base do baixo
+#   lowmid    Médio-graves 300 Hz  (peaking)   - corpo/calor, sem lama
+#   mid       Médios       1 kHz   (peaking)   - caixa/ressonância do driver; cortar aki tira o "forte"
+#   presence  Presença     3.3 kHz (peaking)   - clareza/definição de voz
+#   treble    Agudos       11 kHz  (high-shelf)- brilho/ar
+#
+# Valores aceitos: -12 a +12 dB cada
+
+set -euo pipefail
+
+CONF_DIR="${HOME}/.config/pipewire/pipewire.conf.d"
+CONF_FILE="${CONF_DIR}/gran-eq.conf"
+
+# Frequências e Q ajustados p/ falantes pequenos do ZenBook 14 (UX425):
+# - 5 bandas, divisao logaritmica de 90Hz a 11kHz (~2 oitavas entre centros):
+#   90 / 300 / 1k / 3.3k / 11k — assim cada banda cobre uma regiao sonora natural.
+# - graves 90Hz low-shelf: base; nao erre demais p/ nao estalar o driver pequeno.
+# - lowmid 300Hz: corpo dos graves superiores sem entrar na regiao "lamacenta".
+# - mid 1kHz: ressonancia/"caixa" do falante pequeno — corte aqui reduz a forca media.
+# - presence 3.3kHz: clareza e definicao de vocais e detalhes.
+# - treble 11kHz high-shelf: brilho/ar.
+BASS_FREQ=90
+LOWMID_FREQ=300
+MID_FREQ=1000
+PRES_FREQ=3300
+TREBLE_FREQ=11000
+BASS_Q=0.7
+LOWMID_Q=1.0
+MID_Q=0.8
+PRES_Q=1.0
+TREBLE_Q=0.7
+
+clamp() {
+    python3 -c "
+v=float('$1'); mn=float('$2'); mx=float('$3')
+print(int(mn) if v<mn else int(mx) if v>mx else int(v))
+"
+}
+
+read_current_gains() {
+    if [[ ! -f "$CONF_FILE" ]]; then
+        echo "0" "0" "0" "0" "0"
+        return
+    fi
+    python3 -c "
+import json
+with open('$CONF_FILE') as f:
+    data = json.load(f)
+nodes = data['context.modules'][0]['args']['filter.graph']['nodes']
+gains = {n['name']: n['control']['Gain'] for n in nodes}
+print(gains.get('bass', 0), gains.get('lowmid', 0), gains.get('mid', 0),
+      gains.get('presence', 0), gains.get('treble', 0))
+" 2>/dev/null || echo "0 0 0 0 0"
+}
+
+write_conf() {
+    local bass=$1 lowmid=$2 mid=$3 presence=$4 treble=$5
+    mkdir -p "$CONF_DIR"
+    cat > "$CONF_FILE" << EQCONF
+{
+  "context.modules": [
+    {
+      "name": "libpipewire-module-filter-chain",
+      "args": {
+        "node.name": "gran.equalizer",
+        "node.description": "Gran Equalizer",
+        "media.name": "Gran Equalizer",
+        "filter.graph": {
+          "nodes": [
+            {
+              "type": "builtin",
+              "name": "bass",
+              "label": "bq_lowshelf",
+              "control": {
+                "Freq": ${BASS_FREQ}.0,
+                "Q": ${BASS_Q},
+                "Gain": ${bass}
+              }
+            },
+            {
+              "type": "builtin",
+              "name": "lowmid",
+              "label": "bq_peaking",
+              "control": {
+                "Freq": ${LOWMID_FREQ}.0,
+                "Q": ${LOWMID_Q},
+                "Gain": ${lowmid}
+              }
+            },
+            {
+              "type": "builtin",
+              "name": "mid",
+              "label": "bq_peaking",
+              "control": {
+                "Freq": ${MID_FREQ}.0,
+                "Q": ${MID_Q},
+                "Gain": ${mid}
+              }
+            },
+            {
+              "type": "builtin",
+              "name": "presence",
+              "label": "bq_peaking",
+              "control": {
+                "Freq": ${PRES_FREQ}.0,
+                "Q": ${PRES_Q},
+                "Gain": ${presence}
+              }
+            },
+            {
+              "type": "builtin",
+              "name": "treble",
+              "label": "bq_highshelf",
+              "control": {
+                "Freq": ${TREBLE_FREQ}.0,
+                "Q": ${TREBLE_Q},
+                "Gain": ${treble}
+              }
+            }
+          ],
+          "links": [
+            { "output": "bass:Out", "input": "lowmid:In" },
+            { "output": "lowmid:Out", "input": "mid:In" },
+            { "output": "mid:Out", "input": "presence:In" },
+            { "output": "presence:Out", "input": "treble:In" }
+          ],
+          "inputs": [ "bass:In" ],
+          "outputs": [ "treble:Out" ]
+        },
+        "audio.channels": 2,
+        "audio.position": [ "FL", "FR" ],
+        "capture.props": {
+          "media.class": "Audio/Sink",
+          "node.name": "gran.equalizer",
+          "node.description": "Gran Equalizer"
+        },
+        "playback.props": {
+          "node.name": "gran.equalizer_output",
+          "node.passive": true,
+          "media.role": "DSP"
+        }
+      }
+    }
+  ]
+}
+EQCONF
+}
+
+show() {
+    echo "Banda          Frequência    Ganho"
+    echo "-------------------------------------"
+    echo "  Graves       90 Hz       ${bass} dB"
+    echo "  Médio-graves 300 Hz      ${lowmid} dB"
+    echo "  Médios       1 kHz       ${mid} dB"
+    echo "  Presença     3.3 kHz     ${presence} dB"
+    echo "  Agudos       11 kHz      ${treble} dB"
+}
+
+# --- Main ---
+if [[ $# -eq 0 ]]; then
+    read -r bass lowmid mid presence treble <<< "$(read_current_gains)"
+    echo "Eq atual:"
+    show
+    echo ""
+    echo "Uso: gran-eq <bass> <lowmid> <mid> <presence> <treble>"
+    echo "Ex:  gran-eq 4 2 -1 3 3"
+    exit 0
+fi
+
+if [[ $# -ne 5 ]]; then
+    echo "Uso: gran-eq <bass> <lowmid> <mid> <presence> <treble>" >&2
+    echo "Valores: -12 a +12 dB cada" >&2
+    exit 1
+fi
+
+bass=$(clamp "$1" -12 12)
+lowmid=$(clamp "$2" -12 12)
+mid=$(clamp "$3" -12 12)
+presence=$(clamp "$4" -12 12)
+treble=$(clamp "$5" -12 12)
+
+write_conf "$bass" "$lowmid" "$mid" "$presence" "$treble"
+
+echo "Equalizador atualizado:"
+show
+echo ""
+echo "Reiniciando PipeWire..."
+
+systemctl --user restart pipewire pipewire-pulse wireplumber
+
+sleep 3
+echo "Pronto! O equalizador 'Gran Equalizer' é o sink padrão."
+echo "Para ajustar: gran-eq <bass> <lowmid> <mid> <presence> <treble>"

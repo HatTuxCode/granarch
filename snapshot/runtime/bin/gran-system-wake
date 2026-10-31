@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# gran:summary=Wake displays and restore brightness after idle
+# gran:group=system
+# gran:name=wake
+# gran:examples=gran system wake
+
+gran-brightness-display on
+gran-brightness-keyboard restore
+gran-hyprland-monitor-clamshell >/dev/null 2>&1 || true

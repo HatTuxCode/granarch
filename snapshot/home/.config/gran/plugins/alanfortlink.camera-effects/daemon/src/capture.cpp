@@ -1,0 +1,363 @@
+#include "capture.hpp"
+
+#include <dirent.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <linux/videodev2.h>
+#include <poll.h>
+#include <string.h>
+#include <sys/ioctl.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <limits.h>
+#include <unistd.h>
+
+#include <algorithm>
+#include <cstdio>
+#include <fstream>
+#include <map>
+#include <opencv2/imgcodecs.hpp>
+#include <opencv2/imgproc.hpp>
+#include <opencv2/videoio.hpp>
+#include <chrono>
+#include <thread>
+
+static int xioctl(int fd, unsigned long req, void* arg) {
+  int r;
+  do { r = ioctl(fd, req, arg); } while (r == -1 && errno == EINTR);
+  return r;
+}
+
+static std::string fourccStr(unsigned f) {
+  char s[5] = { char(f & 0xff), char((f >> 8) & 0xff), char((f >> 16) & 0xff), char((f >> 24) & 0xff), 0 };
+  return s;
+}
+
+std::mutex g_credMutex;
+
+// Pixel formats V4L2Capture can decode (MJPEG, YUYV, NV12, UYVY). Used by both
+// probeCamera (to reject raw MIPI nodes with only Bayer/unknown formats) and
+// V4L2Capture::open (to negotiate and validate the capture format).
+static const unsigned kSupportedPixFmts[] = { V4L2_PIX_FMT_MJPEG, V4L2_PIX_FMT_YUYV, V4L2_PIX_FMT_NV12, V4L2_PIX_FMT_UYVY };
+static bool isSupportedPixFmt(unsigned f) {
+  for (unsigned p : kSupportedPixFmts) if (p == f) return true;
+  return false;
+}
+
+// Identify a USB camera by vendor/product/serial from sysfs so udev rules and
+// settings can refer to the physical unit rather than /dev/videoN.
+static std::string readSysAttr(const std::string& p) {
+  std::ifstream f(p);
+  std::string v;
+  std::getline(f, v);
+  while (!v.empty() && (v.back() == '\n' || v.back() == '\r' || v.back() == ' ')) v.pop_back();
+  return v;
+}
+static bool isHex4(const std::string& s) {
+  if (s.size() != 4) return false;
+  for (char c : s) if (!isxdigit((unsigned char)c)) return false;
+  return true;
+}
+// The key ends up in a udev rule and a file name (root, via the setup script),
+// so it is built only from characters that are safe there. The setup script
+// re-validates it with the same rule; a serial that does not fit is dropped.
+static bool isSafeSerial(const std::string& s) {
+  if (s.empty() || s.size() > 64) return false;
+  for (char c : s) if (!(isalnum((unsigned char)c) || c == '.' || c == '_')) return false;
+  return true;
+}
+static std::string usbKeyFor(const std::string& node) {
+  std::string base = "/sys/class/video4linux/" + node + "/device/../";
+  std::string vid = readSysAttr(base + "idVendor"), pid = readSysAttr(base + "idProduct");
+  if (!isHex4(vid) || !isHex4(pid)) return "";
+  std::string serial = readSysAttr(base + "serial");
+  return "usb-" + vid + "-" + pid + (isSafeSerial(serial) ? "-" + serial : "");
+}
+
+// Open the node once and decide whether it is a usable camera.
+// Virtual (v4l2loopback) devices are accepted: an external source may feed one
+// (e.g. v4l2-relayd bridging an Intel IPU6/IPU7 camera). The plugin's own output
+// is excluded separately in scan() by device identity and label.
+//
+// With exclusive_caps=1, a v4l2loopback device shows CAPTURE capabilities only
+// while a writer is actively streaming. When the writer's pipeline is paused
+// (e.g. v4l2-relayd warming up, or between consumer sessions), the device shows
+// OUTPUT-only caps. We still accept it: the daemon will retry the open until
+// the writer is ready, and keeping the capture open once established prevents
+// the writer from pausing again.
+enum class ProbeResult { NoAccess, NotCamera, Camera };
+static ProbeResult probeCamera(const std::string& path, const std::string& node, CameraInfo& info) {
+  int fd = ::open(path.c_str(), O_RDWR | O_NONBLOCK | O_CLOEXEC);
+  if (fd < 0) return ProbeResult::NoAccess;
+  v4l2_capability cap{};
+  if (xioctl(fd, VIDIOC_QUERYCAP, &cap) < 0) { ::close(fd); return ProbeResult::NotCamera; }
+  unsigned caps = (cap.capabilities & V4L2_CAP_DEVICE_CAPS) ? cap.device_caps : cap.capabilities;
+  bool isLoopback = strncmp((const char*)cap.driver, "v4l2 loopback", 13) == 0;
+  if (isLoopback) {
+    // A v4l2loopback device is a camera when it has CAPTURE caps (writer is
+    // streaming) and a potential camera when it only has OUTPUT caps (writer
+    // is paused). Either way, accept it — the open retries until ready. Skip
+    // metadata nodes (META_CAPTURE) and devices without streaming.
+    if ((caps & V4L2_CAP_META_CAPTURE) || !(caps & V4L2_CAP_STREAMING)) { ::close(fd); return ProbeResult::NotCamera; }
+    ::close(fd);
+    info = CameraInfo{ path, (const char*)cap.card, (const char*)cap.bus_info, "", true,
+                       (caps & V4L2_CAP_VIDEO_CAPTURE) != 0 };
+    return ProbeResult::Camera;
+  }
+  // Physical camera: must have CAPTURE + STREAMING, no META, and at least one
+  // decoder-supported pixel format (rejects raw MIPI ISYS nodes with only Bayer).
+  if (!(caps & V4L2_CAP_VIDEO_CAPTURE) || !(caps & V4L2_CAP_STREAMING) || (caps & V4L2_CAP_META_CAPTURE)) { ::close(fd); return ProbeResult::NotCamera; }
+  bool hasSupported = false;
+  for (int i = 0;; i++) {
+    v4l2_fmtdesc fdsc{};
+    fdsc.index = i; fdsc.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    if (xioctl(fd, VIDIOC_ENUM_FMT, &fdsc) < 0) break;
+    if (isSupportedPixFmt(fdsc.pixelformat)) { hasSupported = true; break; }
+  }
+  ::close(fd);
+  if (!hasSupported) return ProbeResult::NotCamera;
+  info = CameraInfo{ path, (const char*)cap.card, (const char*)cap.bus_info, usbKeyFor(node) };
+  return ProbeResult::Camera;
+}
+
+void CameraEnumerator::setExcluded(dev_t rdev, const std::string& label) {
+  std::lock_guard<std::mutex> credLk(g_credMutex);
+  excludeRdev_ = rdev;
+  excludeLabel_ = label;
+}
+
+std::vector<CameraInfo> CameraEnumerator::scan(bool refreshVirtual) {
+  std::vector<CameraInfo> out;
+  DIR* d = opendir("/sys/class/video4linux");
+  if (!d) return out;
+  std::vector<std::string> nodes;
+  while (dirent* e = readdir(d)) {
+    if (strncmp(e->d_name, "video", 5) == 0) nodes.push_back(e->d_name);
+  }
+  closedir(d);
+  // Sort numerically so /dev/video0 comes before /dev/video10.
+  std::sort(nodes.begin(), nodes.end(), [](const std::string& a, const std::string& b) {
+    return atoi(a.c_str() + 5) < atoi(b.c_str() + 5);
+  });
+  std::map<std::string, Probe> fresh;
+  std::map<std::string, int> seenBus;
+  std::lock_guard<std::mutex> credLk(g_credMutex);
+  for (const auto& node : nodes) {
+    std::string sys = "/sys/class/video4linux/" + node;
+    std::string path = "/dev/" + node;
+    // The "device" symlink is absent on v4l2loopback nodes: treat that as
+    // virtual. Physical nodes (USB, PCI) always have it.
+    char real[PATH_MAX];
+    bool isVirtual;
+    if (realpath((sys + "/device").c_str(), real)) {
+      isVirtual = strstr(real, "/devices/virtual/") != nullptr;
+    } else {
+      isVirtual = true;
+      snprintf(real, sizeof real, "/devices/virtual/video4linux/%s", node.c_str());
+    }
+    struct stat st{};
+    if (stat(path.c_str(), &st) != 0 || !S_ISCHR(st.st_mode)) continue;
+    // Exclude the plugin's own output loopback: by device identity once it has
+    // been opened (st_rdev), and by card label as a fallback before that.
+    if (excludeRdev_ && st.st_rdev == excludeRdev_) continue;
+    std::string name = readSysAttr(sys + "/name");
+    if (!excludeLabel_.empty() && name == excludeLabel_) continue;
+    // Identity of what sits behind /dev/videoN: reprobe only when it changes.
+    // A loopback's capture caps toggle when its writer starts or stops, which
+    // the identity cannot reflect without opening the node, so those are
+    // reprobed whenever the caller asks (it is looking for a source, or the
+    // panel just opened). Otherwise the cache stands: an idle daemon has no
+    // reason to keep opening a camera (autosuspend) or someone else's loopback
+    // (a reader appearing every few seconds can hold their pipeline awake).
+    std::string ident = name + "|" + real + "|" + std::to_string(st.st_rdev);
+    Probe pr;
+    auto it = cache_.find(path);
+    bool cached = it != cache_.end() && it->second.ident == ident;
+    if (cached && !(isVirtual && refreshVirtual)) pr = it->second;
+    else {
+      pr.ident = ident;
+      ProbeResult r = probeCamera(path, node, pr.info);
+      // Not cached when the open itself failed (e.g. udev has not applied the
+      // ACL yet): retry on the next scan.
+      if (r == ProbeResult::NoAccess) continue;
+      pr.isCamera = r == ProbeResult::Camera;
+    }
+    fresh[path] = pr;
+    if (!pr.isCamera) continue;
+    if (seenBus.count(pr.info.bus)) continue;
+    seenBus[pr.info.bus] = (int)out.size();
+    out.push_back(pr.info);
+  }
+  cache_.swap(fresh);
+  return out;
+}
+
+bool V4L2Capture::open(const std::string& path, int w, int h, int fps, std::string* err) {
+  close();
+  std::lock_guard<std::mutex> credLk(g_credMutex);  // needs the privileged gid for hidden cameras
+  fd_ = ::open(path.c_str(), O_RDWR | O_NONBLOCK | O_CLOEXEC);
+  if (fd_ < 0) { if (err) *err = std::string("open: ") + strerror(errno); return false; }
+  path_ = path;
+
+  // Prefer MJPEG (USB 2 cameras cannot do 1080p30 raw), then YUYV, then whatever.
+  std::vector<unsigned> supported;
+  for (int i = 0;; i++) {
+    v4l2_fmtdesc fdsc{};
+    fdsc.index = i; fdsc.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    if (xioctl(fd_, VIDIOC_ENUM_FMT, &fdsc) < 0) break;
+    supported.push_back(fdsc.pixelformat);
+  }
+  unsigned chosen = 0;
+  for (unsigned p : kSupportedPixFmts) if (std::find(supported.begin(), supported.end(), p) != supported.end()) { chosen = p; break; }
+  if (!chosen && !supported.empty()) chosen = supported[0];
+  if (!chosen) { if (err) *err = "no capture formats"; close(); return false; }
+
+  v4l2_format fmt{};
+  fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+  fmt.fmt.pix.width = w; fmt.fmt.pix.height = h;
+  fmt.fmt.pix.pixelformat = chosen;
+  fmt.fmt.pix.field = V4L2_FIELD_NONE;
+  if (xioctl(fd_, VIDIOC_S_FMT, &fmt) < 0) { if (err) *err = std::string("S_FMT: ") + strerror(errno); close(); return false; }
+  width_ = fmt.fmt.pix.width; height_ = fmt.fmt.pix.height; pixfmt_ = fmt.fmt.pix.pixelformat;
+  fourcc_ = fourccStr(pixfmt_);
+  if (!isSupportedPixFmt(pixfmt_)) {
+    if (err) *err = "unsupported pixel format " + fourcc_;
+    close();
+    return false;
+  }
+
+  v4l2_streamparm parm{};
+  parm.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+  parm.parm.capture.timeperframe.numerator = 1;
+  parm.parm.capture.timeperframe.denominator = fps > 0 ? fps : 30;
+  xioctl(fd_, VIDIOC_S_PARM, &parm);  // best effort
+
+  v4l2_requestbuffers req{};
+  req.count = 4; req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE; req.memory = V4L2_MEMORY_MMAP;
+  if (xioctl(fd_, VIDIOC_REQBUFS, &req) < 0 || req.count < 2) { if (err) *err = std::string("REQBUFS: ") + strerror(errno); close(); return false; }
+  bufs_.resize(req.count);
+  for (unsigned i = 0; i < req.count; i++) {
+    v4l2_buffer b{};
+    b.type = V4L2_BUF_TYPE_VIDEO_CAPTURE; b.memory = V4L2_MEMORY_MMAP; b.index = i;
+    if (xioctl(fd_, VIDIOC_QUERYBUF, &b) < 0) { if (err) *err = "QUERYBUF"; close(); return false; }
+    bufs_[i].length = b.length;
+    bufs_[i].start = mmap(nullptr, b.length, PROT_READ | PROT_WRITE, MAP_SHARED, fd_, b.m.offset);
+    if (bufs_[i].start == MAP_FAILED) { bufs_[i].start = nullptr; if (err) *err = "mmap"; close(); return false; }
+  }
+  for (unsigned i = 0; i < req.count; i++) {
+    v4l2_buffer b{};
+    b.type = V4L2_BUF_TYPE_VIDEO_CAPTURE; b.memory = V4L2_MEMORY_MMAP; b.index = i;
+    if (xioctl(fd_, VIDIOC_QBUF, &b) < 0) { if (err) *err = "QBUF"; close(); return false; }
+  }
+  v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+  if (xioctl(fd_, VIDIOC_STREAMON, &type) < 0) { if (err) *err = std::string("STREAMON: ") + strerror(errno); close(); return false; }
+  streaming_ = true;
+  return true;
+}
+
+void V4L2Capture::close() {
+  if (fd_ >= 0) {
+    if (streaming_) {
+      v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+      xioctl(fd_, VIDIOC_STREAMOFF, &type);
+      streaming_ = false;
+    }
+    for (auto& b : bufs_) if (b.start) munmap(b.start, b.length);
+    bufs_.clear();
+    ::close(fd_);
+    fd_ = -1;
+  }
+}
+
+bool V4L2Capture::decode(const unsigned char* data, size_t len, cv::Mat& bgr) {
+  switch (pixfmt_) {
+    case V4L2_PIX_FMT_MJPEG: {
+      cv::Mat buf(1, (int)len, CV_8UC1, const_cast<unsigned char*>(data));
+      // Decode into the caller's Mat: reused across frames instead of a fresh
+      // multi-MB allocation per frame.
+      cv::Mat img = cv::imdecode(buf, cv::IMREAD_COLOR, &bgr);
+      return !img.empty();
+    }
+    case V4L2_PIX_FMT_YUYV: {
+      if (len < size_t(width_ * height_ * 2)) return false;
+      cv::Mat yuv(height_, width_, CV_8UC2, const_cast<unsigned char*>(data));
+      cv::cvtColor(yuv, bgr, cv::COLOR_YUV2BGR_YUYV);
+      return true;
+    }
+    case V4L2_PIX_FMT_UYVY: {
+      if (len < size_t(width_ * height_ * 2)) return false;
+      cv::Mat yuv(height_, width_, CV_8UC2, const_cast<unsigned char*>(data));
+      cv::cvtColor(yuv, bgr, cv::COLOR_YUV2BGR_UYVY);
+      return true;
+    }
+    case V4L2_PIX_FMT_NV12: {
+      if (len < size_t(width_ * height_ * 3 / 2)) return false;
+      cv::Mat yuv(height_ * 3 / 2, width_, CV_8UC1, const_cast<unsigned char*>(data));
+      cv::cvtColor(yuv, bgr, cv::COLOR_YUV2BGR_NV12);
+      return true;
+    }
+  }
+  return false;
+}
+
+bool V4L2Capture::grab(cv::Mat& bgr, int timeoutMs) {
+  if (fd_ < 0) return false;
+  pollfd p{ fd_, POLLIN, 0 };
+  int r = poll(&p, 1, timeoutMs);
+  if (r <= 0) return false;
+  v4l2_buffer b{};
+  b.type = V4L2_BUF_TYPE_VIDEO_CAPTURE; b.memory = V4L2_MEMORY_MMAP;
+  if (xioctl(fd_, VIDIOC_DQBUF, &b) < 0) return false;
+  bool ok = false;
+  auto t0 = std::chrono::steady_clock::now();
+  if (!(b.flags & V4L2_BUF_FLAG_ERROR) && b.bytesused > 0)
+    ok = decode((const unsigned char*)bufs_[b.index].start, b.bytesused, bgr);
+  xioctl(fd_, VIDIOC_QBUF, &b);
+  decodeMs_ = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
+  return ok;
+}
+
+// ---------------------------------------------------------------------------
+
+struct FileCapture::Impl {
+  cv::VideoCapture cap;
+  cv::Mat still;
+};
+
+static double monoNow() { return std::chrono::duration<double>(std::chrono::steady_clock::now().time_since_epoch()).count(); }
+
+bool FileCapture::open(const std::string& path, int fps, std::string* err) {
+  close();
+  impl_ = std::make_shared<Impl>();
+  impl_->still = cv::imread(path, cv::IMREAD_COLOR);
+  if (impl_->still.empty()) {
+    if (!impl_->cap.open(path) || !impl_->cap.isOpened()) { if (err) *err = "cannot open " + path; impl_.reset(); return false; }
+    width_ = (int)impl_->cap.get(cv::CAP_PROP_FRAME_WIDTH);
+    height_ = (int)impl_->cap.get(cv::CAP_PROP_FRAME_HEIGHT);
+    double f = impl_->cap.get(cv::CAP_PROP_FPS);
+    if (f > 1 && f < 120) fps = (int)f;
+  } else {
+    width_ = impl_->still.cols; height_ = impl_->still.rows;
+  }
+  period_ = 1.0 / (fps > 0 ? fps : 30);
+  next_ = monoNow();
+  open_ = true;
+  return true;
+}
+
+void FileCapture::close() { impl_.reset(); open_ = false; }
+
+bool FileCapture::grab(cv::Mat& bgr, int) {
+  if (!open_) return false;
+  double now = monoNow();
+  if (now < next_) std::this_thread::sleep_for(std::chrono::duration<double>(next_ - now));
+  next_ = std::max(next_ + period_, monoNow() - period_);
+  double t0 = monoNow();
+  if (!impl_->still.empty()) { impl_->still.copyTo(bgr); decodeMs_ = 0; return true; }
+  if (!impl_->cap.read(bgr) || bgr.empty()) {
+    impl_->cap.set(cv::CAP_PROP_POS_FRAMES, 0);
+    if (!impl_->cap.read(bgr) || bgr.empty()) return false;
+  }
+  decodeMs_ = (monoNow() - t0) * 1000;
+  return true;
+}

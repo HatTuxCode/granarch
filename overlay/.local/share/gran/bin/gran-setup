@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# gran:summary=Configure Gran defaults, devices and services
+# gran:args=<keyboard|git|timezone|default-agent|default-browser|default-terminal|default-editor|network|password|fingerprint|printing|sshd|power|monitors|bindings|input|kitty|fish> [value]
+exec python3 "$GRAN_PATH/lib/control.py" setup "$@"

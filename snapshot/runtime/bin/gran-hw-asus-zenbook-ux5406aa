@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# gran:summary=Detect ASUS Zenbook UX5406AA series laptops on Intel Panther Lake.
+
+gran-hw-match "ux5406aa" && gran-hw-intel-ptl

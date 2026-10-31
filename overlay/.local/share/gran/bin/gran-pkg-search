@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# gran:summary=Search the configured Arch packages
+exec python3 "$GRAN_PATH/lib/control.py" packages search "$@"

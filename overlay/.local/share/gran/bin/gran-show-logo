@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# gran:summary=Print the Gran wordmark
+printf '\n  G R A N\n\n'
