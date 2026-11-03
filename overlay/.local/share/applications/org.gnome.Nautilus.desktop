@@ -1,0 +1,19 @@
+[Desktop Entry]
+Name=Files
+Name[pt_BR]=Arquivos
+Comment=Access and organize files
+Exec=nautilus-remember --new-window %U
+Icon=org.gnome.Nautilus
+Terminal=false
+Type=Application
+DBusActivatable=false
+StartupNotify=true
+Categories=GNOME;GTK;System;FileTools;FileManager;
+MimeType=inode/directory;
+StartupWMClass=org.gnome.Nautilus
+Actions=new-window;
+
+[Desktop Action new-window]
+Name=New Window
+Name[pt_BR]=Nova janela
+Exec=nautilus-remember --new-window

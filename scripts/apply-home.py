@@ -71,6 +71,11 @@ def apply(home):
     tree(ROOT / 'snapshot/home')
     tree(ROOT / 'overlay')
     tree(ROOT / 'skills', '.agents/skills')
+    # The source desktop promoted the personal bar to the native gran.bar.
+    shell_path = home / '.config/gran/shell.json'
+    shell = json.loads(shell_path.read_text())
+    shell.setdefault('bar', {})['id'] = 'gran.bar'
+    write('.config/gran/shell.json', (json.dumps(shell, indent=2) + '\n').encode())
     write('.local/share/gran/LICENSE', (ROOT / 'licenses/omarchy-MIT.txt').read_bytes())
     write('.local/share/gran/sources.json', (ROOT / 'manifests/sources.json').read_bytes())
     write('.local/share/gran/optional-apps.json', (ROOT / 'manifests/optional-apps.json').read_bytes())

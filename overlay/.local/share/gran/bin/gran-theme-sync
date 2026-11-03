@@ -95,10 +95,12 @@ gtk-application-prefer-dark-theme=true
     if script.exists():
         env = os.environ.copy()
         env['HOME'] = str(home)
-        for ini in (home / '.config/zen/profiles.ini', home / '.zen/profiles.ini'):
-            if ini.exists():
-                env['GRAN_ZEN_INI'] = str(ini)
-                subprocess.run([sys.executable, str(script)], env=env, check=True, capture_output=True)
+        env['GRAN_PATH'] = str(home / '.local/share/gran')
+        env['PATH'] = str(home / '.local/bin') + ':' + str(home / '.local/share/gran/bin') + ':' + env.get('PATH', '')
+        profiles = [ini for ini in (home / '.config/zen/profiles.ini', home / '.zen/profiles.ini') if ini.exists()]
+        for ini in profiles or [home / '.config/zen/profiles.ini']:
+            env['GRAN_ZEN_INI'] = str(ini)
+            subprocess.run([sys.executable, str(script)], env=env, check=True, capture_output=True)
     return changed
 
 

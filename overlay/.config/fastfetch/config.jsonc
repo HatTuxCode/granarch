@@ -1,0 +1,162 @@
+{
+  "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+  "logo": {
+    "type": "file",
+    "source": "~/.config/gran/branding/about.txt",
+    "color": {
+      "1": "cyan"
+    },
+    "padding": {
+      "top": 2,
+      "right": 5,
+      "left": 2
+    }
+  },
+  "display": {
+    "disableLinewrap": true
+  },
+  "modules": [
+    "break",
+    "break",
+    {
+      "type": "custom",
+      "format": "\u001b[90m┌──────────────────────Hardware──────────────────────┐"
+    },
+    {
+      "type": "host",
+      "key": " PC",
+      "keyColor": "green"
+    },
+    {
+      "type": "cpu",
+      "key": "│ ├",
+      "showPeCoreCount": true,
+      "keyColor": "green"
+    },
+    {
+      "type": "gpu",
+      "key": "│ ├",
+      "detectionMethod": "pci",
+      "format": "{name}",
+      "keyColor": "green"
+    },
+    {
+      "type": "display",
+      "key": "│ ├󱄄",
+      "keyColor": "green"
+    },
+    {
+      "type": "disk",
+      "key": "│ ├󰋊",
+      "keyColor": "green"
+    },
+    {
+      "type": "memory",
+      "key": "│ ├",
+      "keyColor": "green"
+    },
+    {
+      "type": "swap",
+      "key": "└ └󰓡",
+      "keyColor": "green"
+    },
+    {
+      "type": "custom",
+      "format": "\u001b[90m└────────────────────────────────────────────────────┘"
+    },
+    "break",
+    {
+      "type": "custom",
+      "format": "\u001b[90m┌──────────────────────Sistema ──────────────────────┐"
+    },
+    {
+      "type": "os",
+      "key": "󰣇 OS",
+      "keyColor": "blue"
+    },
+    {
+      "type": "custom",
+      "key": "│ ├ Desktop",
+      "keyColor": "blue",
+      "format": "GranArch"
+    },
+    {
+      "type": "command",
+      "key": "│ ├󰔫 Versão",
+      "keyColor": "blue",
+      "text": "cat \"$HOME/.local/share/gran/version\""
+    },
+    {
+      "type": "kernel",
+      "key": "│ ├",
+      "keyColor": "blue"
+    },
+    {
+      "type": "wm",
+      "key": "│ ├",
+      "keyColor": "blue"
+    },
+    {
+      "type": "de",
+      "key": " DE",
+      "keyColor": "blue"
+    },
+    {
+      "type": "terminal",
+      "key": "│ ├",
+      "keyColor": "blue"
+    },
+    {
+      "type": "packages",
+      "key": "│ ├󰏖",
+      "keyColor": "blue"
+    },
+    {
+      "type": "wmtheme",
+      "key": "│ ├󰉼",
+      "keyColor": "blue"
+    },
+    {
+      "type": "command",
+      "key": "│ ├󰸌",
+      "keyColor": "blue",
+      "text": "cat \"$HOME/.local/state/gran/current/theme.name\""
+    },
+    {
+      "type": "terminalfont",
+      "key": "└ └",
+      "keyColor": "blue"
+    },
+    {
+      "type": "custom",
+      "format": "\u001b[90m└────────────────────────────────────────────────────┘"
+    },
+    "break",
+    {
+      "type": "custom",
+      "format": "\u001b[90m┌────────────────Instalação / Uptime ───────────────┐"
+    },
+    {
+      "type": "command",
+      "key": "󱦟 Instalação",
+      "keyColor": "magenta",
+      "text": "birth=$(stat -c %W /var/log); if [ \"$birth\" -gt 0 ]; then echo \"$(( ($(date +%s) - birth) / 86400 )) dias\"; else echo \"—\"; fi"
+    },
+    {
+      "type": "uptime",
+      "key": "󱫐 Ligado há",
+      "keyColor": "magenta"
+    },
+    {
+      "type": "command",
+      "key": " Atualização",
+      "keyColor": "magenta",
+      "text": "date -r /var/lib/pacman/local +%d/%m/%Y"
+    },
+    {
+      "type": "custom",
+      "format": "\u001b[90m└────────────────────────────────────────────────────┘"
+    },
+    "break"
+  ]
+}

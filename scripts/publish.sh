@@ -31,7 +31,7 @@ fi
 git add -- README.md .gitignore install.sh docs manifests scripts skills snapshot overlay licenses tests
 if ! git diff --cached --quiet; then
   git diff --cached --stat
-  git commit -m 'Prepare GranArch installer for minimal EndeavourOS'
+  git commit -m 'Sync GranArch desktop appearance and installer'
 fi
 git_auth push origin HEAD:main
 printf '\nProjeto publicado: https://github.com/HatTuxCode/granarch\n'

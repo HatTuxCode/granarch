@@ -37,7 +37,7 @@
   },
   "opencode": {
     "upstream": "https://github.com/anomalyco/opencode",
-    "delivery": "mise npm:opencode-ai"
+    "delivery": "mise aqua:anomalyco/opencode"
   },
   "sddm": {
     "upstream": "https://github.com/sddm/sddm",

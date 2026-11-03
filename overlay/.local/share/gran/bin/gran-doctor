@@ -5,9 +5,11 @@ failures=0
 check() {
   if "$@"; then printf 'OK: %s\n' "$*"; else printf 'FALHOU: %s\n' "$*"; failures=$((failures + 1)); fi
 }
-for executable in Hyprland quickshell kitty fish mise zen-browser codex opencode; do
+for executable in Hyprland quickshell kitty fish mise zen-browser codex opencode eza btop fzf bat zoxide tmux nvim; do
   check command -v "$executable"
 done
+check opencode --version
+check fish --no-config -c 'source "$HOME/.config/fish/conf.d/gran-aliases.fish"; functions -q lt lta'
 for file in "$HOME/.config/hypr/hyprland.lua" "$HOME/.config/gran/shell.json" \
             "$HOME/.local/state/gran/current/background" /etc/pam.d/gran-lock-password; do
   check test -f "$file"

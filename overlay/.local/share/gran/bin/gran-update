@@ -13,6 +13,7 @@ if pacman-conf | grep -Eqi 'omarchy\.(org|cn)|^\[omarchy\]'; then
   exit 1
 fi
 sudo pacman -Syu
-mise upgrade node npm:@openai/codex npm:opencode-ai
+mise upgrade node npm:@openai/codex
+gran-opencode-install
 gran app update installed
 printf 'Gran atualizado. O desktop é mantido pelo projeto GranArch.\n'

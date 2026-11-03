@@ -7,3 +7,7 @@ set -gx QT_QUICK_CONTROLS_STYLE Fusion
 if status is-interactive; and command -q mise
     mise activate fish | source
 end
+
+if status is-interactive; and command -q zoxide
+    zoxide init fish | source
+end

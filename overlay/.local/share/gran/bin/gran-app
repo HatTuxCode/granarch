@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # gran:summary=Install or update Zen and Yaru directly from their upstream projects
-# gran:args=<install|update|sources> [zen|yaru|installed]
+# gran:args=<install|update|repair|sources> [zen|yaru|installed]
 """Upstream-only application delivery; never changes pacman repositories."""
 import argparse
 import hashlib
@@ -40,13 +40,49 @@ def extract(archive, destination):
         source.extractall(destination, filter='data')
 
 
-def install_zen(home, old):
-    release = api('https://api.github.com/repos/zen-browser/desktop/releases/latest')
+def integrate_zen(home):
+    """Install upstream icons and a launcher bound to the managed browser."""
+    current = home / '.local/share/gran/apps/zen/current'
+    source = current / 'browser/chrome/icons/default'
+    icons = []
+    for icon in sorted(source.glob('default*.png')):
+        match = re.fullmatch(r'default(\d+)\.png', icon.name)
+        if not match:
+            continue
+        size = int(match[1])
+        target = home / f'.local/share/icons/hicolor/{size}x{size}/apps/zen-browser.png'
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(icon, target)
+        icons.append((size, target))
+    if not icons:
+        raise RuntimeError('Zen has no upstream PNG icons in browser/chrome/icons/default')
+    icon = max(icons)[1]
+    applications = home / '.local/share/applications'
+    applications.mkdir(parents=True, exist_ok=True)
+    executable = str(home / '.local/bin/zen-browser').replace('\\', '\\\\').replace('"', '\\"').replace('`', '\\`').replace('$', '\\$').replace('%', '%%')
+    desktop = '[Desktop Entry]\nName=Zen Browser\nComment=Navegador padrão do GranArch\n'
+    desktop += f'Exec="{executable}" %u\nIcon={icon}\n'
+    desktop += 'Type=Application\nCategories=Network;WebBrowser;\n'
+    desktop += 'MimeType=text/html;application/xhtml+xml;x-scheme-handler/http;x-scheme-handler/https;\n'
+    desktop += 'StartupWMClass=zen\nTerminal=false\n'
+    (applications / 'zen.desktop').write_text(desktop)
+    for command in (['update-desktop-database', str(applications)],
+                    ['gtk-update-icon-cache', '-f', '-t', str(home / '.local/share/icons/hicolor')]):
+        if shutil.which(command[0]):
+            subprocess.run(command, check=True, stdout=subprocess.DEVNULL)
+
+
+def install_zen(home, old, release_tag=None):
+    if release_tag is not None and not re.fullmatch(r'[A-Za-z0-9._-]+', release_tag):
+        raise RuntimeError('Invalid reference Zen release')
+    endpoint = 'tags/' + release_tag if release_tag else 'latest'
+    release = api('https://api.github.com/repos/zen-browser/desktop/releases/' + endpoint)
     version = release['tag_name']
     if not re.fullmatch(r'[A-Za-z0-9._-]+', version):
         raise RuntimeError('Invalid upstream release name')
     if old.get('version') == version and (home / '.local/share/gran/apps/zen/current/zen-bin').is_file():
-        print(f'Zen {version}: already installed')
+        integrate_zen(home)
+        print(f'Zen {version}: already installed; launcher/icons repaired')
         return old
     asset = next(item for item in release['assets'] if item['name'] == 'zen.linux-x86_64.tar.xz')
     digest = asset.get('digest') or ''
@@ -89,6 +125,7 @@ def install_zen(home, old):
         link.unlink(missing_ok=True)
         link.symlink_to(directory)
         link.replace(base / 'current')
+    integrate_zen(home)
     print(f'Zen {version}: installed from zen-browser/desktop')
     return {'version': version, 'source': SOURCES['zen'], 'sha256': digest.split(':', 1)[1]}
 
@@ -132,7 +169,7 @@ def install_yaru(home, old):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action', choices=['install', 'update', 'sources'])
+    parser.add_argument('action', choices=['install', 'update', 'repair', 'sources'])
     parser.add_argument('name', nargs='?', choices=[*SOURCES, 'installed'])
     args = parser.parse_args()
     if args.action == 'sources':
@@ -143,13 +180,23 @@ def main():
     if args.name is None:
         parser.error('an application name is required')
     home = Path.home()
+    if args.action == 'repair':
+        if args.name != 'zen':
+            parser.error('repair supports zen only')
+        integrate_zen(home)
+        return
     state_path = home / '.local/state/gran/apps.json'
     state = json.loads(state_path.read_text()) if state_path.exists() else {}
     names = list(state) if args.name == 'installed' else [args.name]
     for name in names:
         if name not in SOURCES:
             raise RuntimeError(f'Unknown managed application: {name}')
-        state[name] = {'zen': install_zen, 'yaru': install_yaru}[name](home, state.get(name, {}))
+        if name == 'zen':
+            reference = home / '.local/share/gran/default/zen/reference.json'
+            tag = json.loads(reference.read_text())['version'] if args.action == 'install' and reference.exists() else None
+            state[name] = install_zen(home, state.get(name, {}), release_tag=tag)
+        else:
+            state[name] = install_yaru(home, state.get(name, {}))
         state_path.parent.mkdir(parents=True, exist_ok=True)
         temporary = state_path.with_suffix('.tmp')
         temporary.write_text(json.dumps(state, indent=2) + '\n')

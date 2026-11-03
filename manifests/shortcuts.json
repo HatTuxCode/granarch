@@ -1,0 +1,79 @@
+{
+  "binding_sources": [
+    {
+      "module": "bindings.lua",
+      "path": ".config/hypr/bindings.lua",
+      "source_sha256": "2ac5f51c2e5f2bff8d894a1142c685fc91a17a2c52f6afb8d42cc10f03120138",
+      "gran_sha256": "56737e4955acccbf4d1a2e9d3bda0a8e062eb9bc3c37301c1467c9665a37f540"
+    },
+    {
+      "module": "applications.lua",
+      "path": ".local/share/gran/default/hypr/bindings/applications.lua",
+      "source_sha256": "b38dec7b1761a9fd34975b44a071e6fd639ba7004c3b34800e7d5784a1995871",
+      "gran_sha256": "b38dec7b1761a9fd34975b44a071e6fd639ba7004c3b34800e7d5784a1995871"
+    },
+    {
+      "module": "clipboard.lua",
+      "path": ".local/share/gran/default/hypr/bindings/clipboard.lua",
+      "source_sha256": "2e0260f0f8949a3ffdb9062a0b77e6fdee08b4deb3ab51dc347a242b24928622",
+      "gran_sha256": "2e0260f0f8949a3ffdb9062a0b77e6fdee08b4deb3ab51dc347a242b24928622"
+    },
+    {
+      "module": "dictation.lua",
+      "path": ".local/share/gran/default/hypr/bindings/dictation.lua",
+      "source_sha256": "3f95a69c641c3a579510e8369a603c48373f21642fd819276e0757ac28106aba",
+      "gran_sha256": "3f95a69c641c3a579510e8369a603c48373f21642fd819276e0757ac28106aba"
+    },
+    {
+      "module": "input-method.lua",
+      "path": ".local/share/gran/default/hypr/bindings/input-method.lua",
+      "source_sha256": "0ff19d414f2e724015067ba062a24bd85fd47c3f4aee3c5c7e707b0b6359acec",
+      "gran_sha256": "0ff19d414f2e724015067ba062a24bd85fd47c3f4aee3c5c7e707b0b6359acec"
+    },
+    {
+      "module": "jis.lua",
+      "path": ".local/share/gran/default/hypr/bindings/jis.lua",
+      "source_sha256": "0e31c955ea2703b8a6f731ba2911065c3bbb0eec2244706d9cded221e6f95043",
+      "gran_sha256": "0e31c955ea2703b8a6f731ba2911065c3bbb0eec2244706d9cded221e6f95043"
+    },
+    {
+      "module": "media.lua",
+      "path": ".local/share/gran/default/hypr/bindings/media.lua",
+      "source_sha256": "e2aa504f3606585a09e5b486daff1f5ccc82a0b993666b7762bf30928bc73917",
+      "gran_sha256": "e2aa504f3606585a09e5b486daff1f5ccc82a0b993666b7762bf30928bc73917"
+    },
+    {
+      "module": "tiling.lua",
+      "path": ".local/share/gran/default/hypr/bindings/tiling.lua",
+      "source_sha256": "7aacdebc75fc43584f5c76aeeede7c1ffae6694349b9becc8be47ba59ce33340",
+      "gran_sha256": "7aacdebc75fc43584f5c76aeeede7c1ffae6694349b9becc8be47ba59ce33340"
+    },
+    {
+      "module": "utilities.lua",
+      "path": ".local/share/gran/default/hypr/bindings/utilities.lua",
+      "source_sha256": "21ae21e175c0fe5581b4f9d114959830f56a3e354b5f11de83ac21d14c2ed890",
+      "gran_sha256": "21ae21e175c0fe5581b4f9d114959830f56a3e354b5f11de83ac21d14c2ed890"
+    }
+  ],
+  "files": [
+    ".config/hypr/bindings.lua",
+    ".config/fish/conf.d/gran-aliases.fish",
+    ".config/btop/btop.conf",
+    ".config/btop/themes/current.theme",
+    ".local/share/gran/default/hypr/qconsole.lua",
+    ".local/share/gran/default/hypr/apps/system.lua",
+    ".local/share/gran/default/hypr/apps/terminals.lua",
+    ".local/share/gran/bin/gran-launch-tui",
+    ".local/share/gran/bin/gran-launch-or-focus-tui",
+    ".local/share/gran/bin/gran-launch-or-focus",
+    ".local/share/gran/bin/gran-launch-terminal",
+    ".local/share/gran/default/hypr/bindings/applications.lua",
+    ".local/share/gran/default/hypr/bindings/clipboard.lua",
+    ".local/share/gran/default/hypr/bindings/dictation.lua",
+    ".local/share/gran/default/hypr/bindings/input-method.lua",
+    ".local/share/gran/default/hypr/bindings/jis.lua",
+    ".local/share/gran/default/hypr/bindings/media.lua",
+    ".local/share/gran/default/hypr/bindings/tiling.lua",
+    ".local/share/gran/default/hypr/bindings/utilities.lua"
+  ]
+}

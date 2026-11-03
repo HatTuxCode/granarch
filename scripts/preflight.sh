@@ -61,7 +61,7 @@ gran_preflight() {
 gran_check_tools() {
   local executable
   for executable in python dbus-run-session gsettings glib-compile-schemas update-desktop-database \
-                    mise git curl xdg-settings xdg-mime xdg-user-dirs-update fc-cache; do
+                    mise git curl fish eza btop xdg-settings xdg-mime xdg-user-dirs-update fc-cache; do
     command -v "$executable" >/dev/null || die "Dependência não disponível após pacman: $executable"
   done
   if [[ $INSTALL_YARU == 1 ]]; then

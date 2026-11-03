@@ -37,14 +37,13 @@ class BundleTests(unittest.TestCase):
             backups = sorted((home / '.local/state/gran/backups').iterdir())
             self.assertEqual((backups[0] / '.config/hypr/bindings.lua').read_text(), '-- personal original\n')
             value = original.read_text()
-            for optional in ('warp-terminal', 'virt-manager', 'tuios', 'GranCtrl.desktop', 'chromium http://localhost:3000'):
+            for optional in ('virt-manager', 'tuios', 'codex', 'GranCtrl.desktop', 'chromium http://localhost:3000'):
                 self.assertIn(optional, value)
             self.assertNotIn('/home/hattux', value)
             self.assertNotIn('omarchy', value.lower())
-            metadata = json.loads((ROOT / 'snapshot/metadata.json').read_text())
+            metadata = json.loads((ROOT / 'manifests/shortcuts.json').read_text())
             for entry in metadata['binding_sources']:
-                relative = '.config/hypr/bindings.lua' if entry['module'] == 'bindings.lua' else (
-                    '.local/share/gran/default/hypr/bindings/' + entry['module'])
+                relative = entry['path']
                 deployed = (home / relative).read_text().replace(str(home), '@@GRAN_HOME@@').encode()
                 self.assertEqual(hashlib.sha256(deployed).hexdigest(), entry['gran_sha256'], entry['module'])
             startup = (home / '.local/share/gran/default/hypr/autostart.lua').read_text()
@@ -130,6 +129,9 @@ class UpstreamDeliveryTests(unittest.TestCase):
             payload = b'#!/bin/sh\nprintf zen\n'
             member.size = len(payload)
             tar.addfile(member, io.BytesIO(payload))
+            icon = tarfile.TarInfo('zen/browser/chrome/icons/default/default128.png')
+            icon.size = 8
+            tar.addfile(icon, io.BytesIO(b'\x89PNG\r\n\x1a\n'))
         payload = archive.getvalue()
         release = {'tag_name': 'test-1', 'assets': [{
             'name': 'zen.linux-x86_64.tar.xz', 'digest': 'sha256:' + hashlib.sha256(payload).hexdigest(),

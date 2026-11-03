@@ -155,9 +155,7 @@ done
 sudo python "$ROOT/scripts/apply-system.py" "${SYSTEM_OPTIONS[@]}"
 
 echo '[3/5] Instalando as ferramentas de terminal pelo mise...'
-mise use -g node@lts
-mise use -g npm:@openai/codex@latest npm:opencode-ai@latest
-mise reshim
+bash "$ROOT/scripts/install-tools.sh"
 
 echo '[4/5] Instalando programas diretamente dos projetos upstream...'
 gran app install zen

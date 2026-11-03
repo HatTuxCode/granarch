@@ -255,6 +255,6 @@
     "label": "OpenCode",
     "category": "ai",
     "delivery": "mise",
-    "tool": "npm:opencode-ai@latest"
+    "tool": "aqua:anomalyco/opencode@latest"
   }
 }

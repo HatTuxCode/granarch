@@ -98,3 +98,14 @@ extra/inkscape
 extra/xorg-server-xvfb
 extra/xorg-xauth
 extra/rsync
+extra/fastfetch
+
+# Interactive shell aliases and navigation from the reference desktop.
+extra/eza
+extra/fzf
+extra/bat
+extra/zoxide
+extra/tmux
+extra/neovim
+core/openssh
+core/file

@@ -93,7 +93,10 @@ def optional(kind, name=None):
     if item.get('delivery') == 'upstream':
         run(['gran-app', 'install', name])
     elif item.get('delivery') == 'mise':
-        run(['mise', 'use', '-g', item['tool']])
+        if name == 'opencode':
+            run(['gran-opencode-install'])
+        else:
+            run(['mise', 'use', '-g', item['tool']])
     else:
         packages('install', item['packages'])
 
