@@ -1,6 +1,6 @@
 # GranArch
 
-Pós-instalador para um Arch Linux enxuto com o seu desktop atual, portado para
+Pós-instalador para um EndeavourOS mínimo, Arch Linux enxuto ou CachyOS com o seu desktop atual, portado para
 **Gran**. A ISO será montada depois da validação e dos ajustes.
 
 O sistema não usa repositório, mirror, chave ou pacote do Omarchy. Hyprland,
@@ -36,7 +36,7 @@ Aplicativos opcionais dos atalhos não são instalados. Por exemplo,
 enquanto `Super+Enter` usa o terminal padrão Kitty. Não foram trocadas combinações
 para abrir aplicativos diferentes.
 
-## Usar no Arch novo
+## Usar no EndeavourOS mínimo ou Arch novo
 
 Para baixar pelo repositório:
 
@@ -44,14 +44,19 @@ Para baixar pelo repositório:
 sudo pacman -Syu --needed git
 git clone https://github.com/HatTuxCode/granarch.git
 cd granarch
-bash install.sh
+bash install.sh --verify
+bash install.sh --check
 bash install.sh --install
 ```
+
+Execute os comandos como usuário comum; somente o pacman e as etapas internas
+que precisam de privilégio usam sudo. Se `--check` falhar, corrija o erro antes
+de executar `--install`.
 
 Se o repositório for privado, autentique seu acesso GitHub antes de cloná-lo.
 Não é necessário baixar o pacote de distribuição quando o projeto é clonado.
 
-Instale um Arch básico x86_64 com bootloader funcionando, internet, usuário comum,
+Instale um EndeavourOS mínimo (instalação online, opção sem desktop) ou Arch básico x86_64 com bootloader funcionando, internet, usuário comum,
 sudo e locale `en_US.UTF-8`. Para conservar o unlock de disco como no notebook
 atual, escolha criptografia LUKS durante a instalação básica. O script não
 particiona nem transforma um disco existente em criptografado.
@@ -63,6 +68,7 @@ tar -xzf granarch-bootstrap.tar.gz
 cd GranArch
 bash install.sh                    # apenas visualizar
 bash install.sh --verify
+bash install.sh --check              # conferir o destino, sem instalar
 bash install.sh --install          # assistente de pós-instalação
 ```
 
@@ -74,7 +80,22 @@ máquina de origem: o assistente recusa convertê-la.
 Após reiniciar, o SDDM inicia a sessão Gran conforme o plano. Pelo TTY, a
 alternativa é `gran session`. Execute `gran doctor` dentro do desktop.
 
-Opções de instalação: `--no-boot`, `--no-login`, `--no-autologin`,
+No EndeavourOS, o instalador preserva dracut, kernel-install, o kernel e o
+bootloader. Não instala mkinitcpio/Plymouth nem modifica o boot nesse fluxo;
+o SDDM e a sessão Gran são configurados normalmente. Use a instalação online
+com **No Desktop / sem desktop**, usuário comum, sudo e NetworkManager.
+
+No CachyOS, os pacotes seguem a prioridade dos repositórios já configurados,
+incluindo as variantes otimizadas. Kernel, initramfs e boot são preservados por
+padrão. O visual Plymouth do Gran fica restrito ao fluxo de boot suportado do
+Arch; `--boot` exige mkinitcpio e boot sem gerenciadores da distribuição; não é suportado no EndeavourOS.
+
+O instalador cria as pastas auxiliares mesmo em um HOME vazio, verifica os
+pacotes e versões disponíveis antes de aplicar o desktop e registra a execução
+em `~/.local/state/gran/install-backups/<data>/install.log`. A pré-verificação usa
+as bases locais do pacman; se estiverem antigas, execute `sudo pacman -Syu`.
+
+Opções de instalação: `--check`, `--boot`, `--no-boot`, `--no-login`, `--no-autologin`,
 `--no-change-shell`, `--no-services` e `--no-yaru`.
 Confira [instalação](docs/installation.md) e
 [boot, energia e cores](docs/boot-power-theme.md).

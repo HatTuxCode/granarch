@@ -123,6 +123,8 @@ def install_yaru(home, old):
         subprocess.run(['meson', 'setup', str(build), str(source),
                         '--prefix=' + str(home / '.local'), *flags], check=True)
         subprocess.run(['meson', 'compile', '-C', str(build)], check=True)
+        # Yaru's install hook runs glib-compile-schemas even without GNOME.
+        (home / '.local/share/glib-2.0/schemas').mkdir(parents=True, exist_ok=True)
         subprocess.run(['meson', 'install', '-C', str(build)], check=True)
     print(f'Yaru {tag}: installed from ubuntu/yaru')
     return {'version': tag, 'commit': commit, 'source': SOURCES['yaru']}

@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 ROOT=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
-VM_DIR="$ROOT/vm"
+VM_DIR="$ROOT/vm/endeavouros"
 URI=qemu:///session
-NAME=granarch-test
+NAME=granarch-endeavouros
 action=${1:-open}
+if [[ $action == replace-cachyos ]]; then
+  bash "$ROOT/scripts/retire-cachyos-vm.sh"
+  action=open
+fi
 if [[ $action == prepare ]]; then shift; exec python "$ROOT/scripts/prepare-vm.py" "$@"; fi
 [[ -f $VM_DIR/config.json ]] || { echo 'Prepare primeiro: bash scripts/vm.sh prepare' >&2; exit 1; }
 if [[ $action == status ]]; then exec virsh -c "$URI" dominfo "$NAME"; fi
@@ -21,7 +25,7 @@ if [[ $action == open ]]; then
     exit 1
   }
   if ! virsh -c "$URI" domstate "$NAME" 2>/dev/null | grep -q '^running'; then
-    virsh -c "$URI" define "$VM_DIR/granarch-test.xml"
+    virsh -c "$URI" define "$VM_DIR/granarch-endeavouros.xml"
     virsh -c "$URI" start "$NAME"
   fi
   exec virt-manager --connect "$URI" --show-domain-console "$NAME"
@@ -36,7 +40,7 @@ PY
   )
   exec 9>"$VM_DIR/run.lock"
   flock -n 9 || { echo 'A VM já está em execução.' >&2; exit 1; }
-  exec qemu-system-x86_64 -name GranArch-Test -machine q35,accel=kvm -cpu host \
+  exec qemu-system-x86_64 -name GranArch-EndeavourOS -machine q35,accel=kvm -cpu host \
     -m "${settings[0]}" -smp "${settings[1]}" \
     -drive "if=pflash,format=raw,unit=0,readonly=on,file=${settings[5]}" \
     -drive "if=pflash,format=raw,unit=1,file=${settings[6]}" \
@@ -47,5 +51,5 @@ PY
     -netdev user,id=network0 -device virtio-net-pci,netdev=network0 \
     -device qemu-xhci -device usb-tablet
 fi
-echo 'Uso: bash scripts/vm.sh prepare|open|direct|status|stop' >&2
+echo 'Uso: bash scripts/vm.sh prepare|replace-cachyos|open|direct|status|stop' >&2
 exit 2

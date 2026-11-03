@@ -64,6 +64,8 @@ def apply(root, user, home, boot=True, login=True, autologin=True, execute=False
     if execute and (root != Path('/') or os.geteuid() != 0):
         raise RuntimeError('--execute requires root on the actual target system')
     loader, loader_files = boot_files(root) if boot else (None, [])
+    if boot and any((root / path).exists() for path in ('etc/default/limine', 'etc/sdboot-manage.conf')):
+        raise RuntimeError('Boot gerenciado pela distribuição; use --no-boot para preservá-lo.')
     if boot and not list((root / 'etc/mkinitcpio.d').glob('*.preset')):
         raise RuntimeError('Nenhum preset mkinitcpio encontrado; configure a geração do initramfs no Arch básico.')
     backup = root / 'var/backups/gran' / ('system-' + datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S.%fZ'))

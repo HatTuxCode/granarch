@@ -18,9 +18,20 @@ elif [[ $(git branch --show-current) != main ]]; then
   git switch -c main
 fi
 python "$ROOT/scripts/prepare-publication.py" --destination "$STAGING/repo"
+# Keep commit identity local to the publication clone.
+if ! git var GIT_AUTHOR_IDENT >/dev/null 2>&1; then
+  identity=$(gh api user --jq '[.login, (.id|tostring)] | @tsv')
+  IFS=$'\t' read -r login account_id <<< "$identity"
+  [[ $login =~ ^[A-Za-z0-9-]+$ && $account_id =~ ^[0-9]+$ ]] || {
+    echo 'Não consegui identificar a conta GitHub para o commit.' >&2; exit 1;
+  }
+  git config user.name "$login"
+  git config user.email "$account_id+$login@users.noreply.github.com"
+fi
 git add -- README.md .gitignore install.sh docs manifests scripts skills snapshot overlay licenses tests
 if ! git diff --cached --quiet; then
-  git commit -m 'Add GranArch desktop, installer, menus and VM test setup'
+  git diff --cached --stat
+  git commit -m 'Prepare GranArch installer for minimal EndeavourOS'
 fi
 git_auth push origin HEAD:main
 printf '\nProjeto publicado: https://github.com/HatTuxCode/granarch\n'

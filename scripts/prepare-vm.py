@@ -12,14 +12,30 @@ import xml.etree.ElementTree as ET
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def prepare(iso, memory=2048, cpus=2):
+def prepare(iso, memory=3072, cpus=2):
     iso = iso.expanduser().resolve()
     if not iso.is_file():
-        raise ValueError('ISO do Arch não encontrada: ' + str(iso))
+        raise ValueError('ISO não encontrada: ' + str(iso))
     if memory < 1024 or memory > 4096 or cpus < 1 or cpus > 4:
         raise ValueError('Use 1024–4096 MiB e 1–4 CPUs neste notebook.')
-    base = ROOT / 'vm'
-    base.mkdir(exist_ok=True)
+    for executable in ('qemu-img', 'qemu-system-x86_64', 'xorriso'):
+        if not shutil.which(executable):
+            raise ValueError('Dependência da VM ausente: ' + executable)
+    base = ROOT / 'vm/endeavouros'
+    # Do not replace a CD or configuration while the prepared VM is running.
+    configuration = base / 'config.json'
+    if configuration.exists() and shutil.which('virsh'):
+        previous = json.loads(configuration.read_text())
+        running = subprocess.run(['virsh', '-c', 'qemu:///session', 'list', '--uuid'],
+                                 capture_output=True, text=True)
+        if previous.get('uuid') in running.stdout.split():
+            raise ValueError('Desligue a VM antes de preparar/atualizar a mídia.')
+    existing_disk = base / 'granarch-test.qcow2'
+    if existing_disk.exists():
+        # qemu-img info uses the image lock and fails if a direct QEMU holds it.
+        subprocess.run(['qemu-img', 'info', str(existing_disk)], check=True,
+                       stdout=subprocess.DEVNULL)
+    base.mkdir(parents=True, exist_ok=True)
     disk = base / 'granarch-test.qcow2'
     if not disk.exists():
         subprocess.run(['qemu-img', 'create', '-f', 'qcow2', str(disk), '64G'], check=True)
@@ -48,7 +64,7 @@ def prepare(iso, memory=2048, cpus=2):
     staging_media.replace(media)
     configuration = base / 'config.json'
     previous = json.loads(configuration.read_text()) if configuration.exists() else {}
-    settings = {'name': 'granarch-test', 'uuid': previous.get('uuid', str(uuid.uuid4())),
+    settings = {'name': 'granarch-endeavouros', 'uuid': previous.get('uuid', str(uuid.uuid4())),
                 'memory_mib': memory, 'cpus': cpus, 'disk': str(disk), 'iso': str(iso),
                 'media': str(media), 'firmware': str(code), 'nvram': str(nvram)}
     configuration.write_text(json.dumps(settings, indent=2) + '\n')
@@ -59,7 +75,7 @@ def prepare(iso, memory=2048, cpus=2):
         return item
     node(domain, 'name', settings['name'])
     node(domain, 'uuid', settings['uuid'])
-    node(domain, 'title', 'GranArch — teste isolado')
+    node(domain, 'title', 'GranArch — EndeavourOS mínimo')
     node(domain, 'memory', str(memory), unit='MiB')
     node(domain, 'currentMemory', str(memory), unit='MiB')
     node(domain, 'vcpu', str(cpus), placement='static')
@@ -104,17 +120,17 @@ def prepare(iso, memory=2048, cpus=2):
     node(devices, 'audio', id='1', type='spice')
     node(devices, 'memballoon', model='virtio')
     ET.indent(domain)
-    ET.ElementTree(domain).write(base / 'granarch-test.xml', encoding='unicode', xml_declaration=True)
-    print(f'VM preparada: {base}\nDisco próprio: {disk}\nISO Arch: {iso}\nGranArch: {media}')
+    ET.ElementTree(domain).write(base / 'granarch-endeavouros.xml', encoding='unicode', xml_declaration=True)
+    print(f'VM preparada: {base}\nDisco próprio: {disk}\nISO de instalação: {iso}\nGranArch: {media}')
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--iso', type=Path)
-    parser.add_argument('--memory', type=int, default=2048)
+    parser.add_argument('--memory', type=int, default=3072)
     parser.add_argument('--cpus', type=int, default=2)
     args = parser.parse_args()
-    candidates = sorted((Path.home() / 'Downloads').glob('archlinux-*-x86_64.iso'))
+    candidates = sorted((Path.home() / 'Downloads').glob('EndeavourOS*.iso'), key=lambda p: p.stat().st_mtime)
     if args.iso is None and not candidates:
-        parser.error('Não encontrei a ISO Arch em Downloads; use --iso CAMINHO.')
+        parser.error('Não encontrei a ISO EndeavourOS em Downloads; use --iso CAMINHO.')
     prepare(args.iso or candidates[-1], args.memory, args.cpus)

@@ -23,6 +23,14 @@ def apply(home):
                 raise RuntimeError(f'Symlink parent requires manual review: {ancestor}')
     validate_parent(backup)
     backup.mkdir(parents=True)
+    # Empty directories are not represented by the file-only snapshot.
+    for relative in ('.config/mise', '.config/dconf', '.local/bin',
+                     '.local/share/applications', '.local/share/icons',
+                     '.local/share/glib-2.0/schemas', '.cache/gran',
+                     '.local/state/gran', '.config/gtk-3.0', '.config/gtk-4.0'):
+        destination = home / relative
+        validate_parent(destination / '.gran-directory-check')
+        destination.mkdir(parents=True, exist_ok=True)
     changes = []
     recorded = set()
 

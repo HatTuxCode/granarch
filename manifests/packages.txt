@@ -80,3 +80,21 @@ extra/plymouth
 core/mkinitcpio
 extra/playerctl
 extra/cantarell-fonts
+
+# Explicit dependencies for minimal installations, runtime and Yaru builds.
+core/base-devel
+core/dbus
+core/glib2
+extra/gsettings-desktop-schemas
+extra/dconf
+extra/desktop-file-utils
+extra/shared-mime-info
+extra/upower
+extra/libnotify
+extra/librsvg
+extra/python-cairo
+extra/python-pillow
+extra/inkscape
+extra/xorg-server-xvfb
+extra/xorg-xauth
+extra/rsync

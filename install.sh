@@ -1,24 +1,26 @@
 #!/usr/bin/env bash
 # GranArch post-install. Default execution displays a plan without host changes.
-set -euo pipefail
+set -Eeuo pipefail
 ROOT=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 MODE=plan
 CHANGE_SHELL=1
 ENABLE_SERVICES=1
 INSTALL_YARU=1
-CONFIGURE_BOOT=1
+CONFIGURE_BOOT=auto
 CONFIGURE_LOGIN=1
 AUTOLOGIN=1
 die() { printf 'Erro: %s\n' "$*" >&2; exit 1; }
 usage() {
   cat <<'EOF'
-GranArch — desktop Gran sobre Arch Linux enxuto
+GranArch — desktop Gran sobre EndeavourOS mínimo, Arch Linux ou CachyOS
   bash install.sh                     Prévia; não altera o sistema
   bash install.sh --install           Pós-instalador interativo
   bash install.sh --verify            Conferir snapshot
+  bash install.sh --check             Diagnóstico do destino, sem instalar
   bash install.sh --no-change-shell   Preservar shell de login
   bash install.sh --no-services       Não habilitar rede/Bluetooth
   bash install.sh --no-yaru           Não compilar ícones/cursor Yaru
+  bash install.sh --boot              Configurar visual do boot (opt-in nas derivadas)
   bash install.sh --no-boot           Preservar configuração visual do bootloader
   bash install.sh --no-login          Não configurar SDDM
   bash install.sh --no-autologin      Exigir login SDDM em vez de entrada automática
@@ -30,6 +32,8 @@ for argument in "$@"; do
   case "$argument" in
     --install) MODE=install ;;
     --verify) MODE=verify ;;
+    --check) MODE=check ;;
+    --boot) CONFIGURE_BOOT=1 ;;
     --dry-run) MODE=plan ;;
     --no-change-shell) CHANGE_SHELL=0 ;;
     --no-services) ENABLE_SERVICES=0 ;;
@@ -44,14 +48,31 @@ done
 [[ -f $ROOT/snapshot/SHA256SUMS ]] || die 'Snapshot ausente.'
 verify() { (cd "$ROOT/snapshot" && sha256sum --quiet -c SHA256SUMS); }
 if [[ $MODE == verify ]]; then verify; echo 'Snapshot Gran íntegro.'; exit 0; fi
+DISTRO=arch
+if [[ -r /etc/os-release ]]; then
+  DISTRO=$(. /etc/os-release; printf '%s' "${ID:-arch}")
+fi
+source "$ROOT/scripts/preflight.sh"
+gran_select_boot
 mapfile -t PACKAGES < <(sed -e 's/#.*//' -e '/^[[:space:]]*$/d' "$ROOT/manifests/packages.txt")
+# CachyOS supplies coordinated optimized packages; keep its repository priority.
+if [[ $DISTRO == cachyos ]]; then PACKAGES=("${PACKAGES[@]#*/}"); fi
 NOTEBOOK_PACKAGES=()
 if grep -qi asus /sys/class/dmi/id/sys_vendor 2>/dev/null; then NOTEBOOK_PACKAGES+=(extra/asusctl); fi
 if grep -q GenuineIntel /proc/cpuinfo 2>/dev/null; then NOTEBOOK_PACKAGES+=(extra/thermald); fi
+if [[ $DISTRO == cachyos ]]; then NOTEBOOK_PACKAGES=("${NOTEBOOK_PACKAGES[@]#*/}"); fi
+gran_filter_boot_packages
+if [[ $MODE == check ]]; then
+  verify
+  gran_preflight
+  echo 'Pré-verificação concluída. Boot e sessão gráfica precisam do teste na VM.'
+  exit 0
+fi
 cat <<EOF
 
 GranArch — plano de instalação
-Desktop: Hyprland + Quickshell de core/extra oficiais do Arch.
+Destino: $DISTRO. Desktop: Hyprland + Quickshell.
+EndeavourOS preserva seu boot/dracut; CachyOS mantém a prioridade dos repositórios.
 Personalização: Nord, sua barra, gestos e todos os módulos de atalhos originais.
 Comandos e caminhos: gran, GRAN_PATH, ~/.config/gran e ~/.local/state/gran.
 Zen: releases oficiais de zen-browser/desktop com SHA-256 verificado.
@@ -72,7 +93,7 @@ if (( ${#NOTEBOOK_PACKAGES[@]} )); then printf 'Hardware detectado: %s\n' "${NOT
 [[ $MODE == install ]] || { echo; echo 'Para instalar: bash install.sh --install'; exit 0; }
 [[ $EUID -ne 0 ]] || die 'Execute como usuário comum, sem sudo no comando inicial.'
 [[ -t 0 && -t 1 ]] || die 'O assistente precisa de um terminal interativo.'
-[[ $(uname -m) == x86_64 && -f /etc/arch-release ]] || die 'O destino deve ser Arch Linux x86_64 instalado.'
+[[ $(uname -m) == x86_64 && -f /etc/arch-release ]] || die 'O destino deve ser Arch Linux, EndeavourOS ou CachyOS x86_64 instalado.'
 command -v sudo >/dev/null || die 'Configure sudo antes de instalar.'
 if pacman -Qq omarchy >/dev/null 2>&1 || pacman -Qq omarchy-dev >/dev/null 2>&1; then
   die 'Use um Arch enxuto ou VM; a máquina de origem não deve ser convertida.'
@@ -81,13 +102,17 @@ if pacman-conf | grep -Eqi 'omarchy\.(org|cn)|^\[omarchy\]'; then
   die 'O destino contém configuração de repositório Omarchy. Prepare um Arch com fontes oficiais.'
 fi
 verify
-read -r -p 'Aplicar o plano neste Arch? Digite INSTALAR: ' answer
+gran_preflight
+read -r -p 'Aplicar o plano neste sistema? Digite INSTALAR: ' answer
 [[ $answer == INSTALAR ]] || { echo 'Cancelado.'; exit 0; }
 sudo -v
 STAMP=$(date -u +%Y%m%dT%H%M%S)-$$
 SYSTEM_BACKUP="/var/backups/gran/$STAMP"
 USER_BACKUP="$HOME/.local/state/gran/install-backups/$STAMP"
 mkdir -p "$USER_BACKUP"
+LOG="$USER_BACKUP/install.log"
+exec > >(tee -a "$LOG") 2>&1
+trap 'status=$?; printf "Falha na linha %s (código %s). Log: %s\n" "$LINENO" "$status" "$LOG" >&2; exit "$status"' ERR
 sudo mkdir -p "$SYSTEM_BACKUP"
 getent passwd "$USER" | sudo tee "$SYSTEM_BACKUP/passwd-entry.txt" >/dev/null
 for relative in .config/mise/config.toml .config/mimeapps.list .local/share/applications/mimeapps.list; do
@@ -102,6 +127,7 @@ done
 
 echo '[1/5] Atualizando e instalando pacotes oficiais do Arch...'
 sudo pacman -Syu --needed "${PACKAGES[@]}" "${NOTEBOOK_PACKAGES[@]}"
+gran_check_tools
 for pair in 'hyprland 0.57.0' 'quickshell 0.3.2'; do
   read -r package minimum <<< "$pair"
   installed=$(pacman -Q "$package" | awk '{print $2}')
@@ -141,7 +167,7 @@ xdg-settings set default-web-browser zen.desktop
 for type in x-scheme-handler/http x-scheme-handler/https text/html application/xhtml+xml; do
   xdg-mime default zen.desktop "$type"
 done
-python - "$ROOT/snapshot/appearance.json" "$USER_BACKUP/appearance.json" <<'PY'
+dbus-run-session -- python - "$ROOT/snapshot/appearance.json" "$USER_BACKUP/appearance.json" <<'PY'
 import json, subprocess, sys
 preferences = json.load(open(sys.argv[1]))
 previous = {key: subprocess.check_output(
@@ -166,8 +192,8 @@ sudo systemctl daemon-reload
 sudo systemctl enable gran-charge-limit.service
 for package in "${NOTEBOOK_PACKAGES[@]}"; do
   case "$package" in
-    extra/asusctl) sudo systemctl enable asusd.service ;;
-    extra/thermald) sudo systemctl enable thermald.service ;;
+    extra/asusctl|asusctl) sudo systemctl enable asusd.service ;;
+    extra/thermald|thermald) sudo systemctl enable thermald.service ;;
   esac
 done
 if [[ $CONFIGURE_LOGIN == 1 ]]; then
