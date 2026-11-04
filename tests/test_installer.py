@@ -37,6 +37,16 @@ class InstallerTests(unittest.TestCase):
         wants=next(line for line in unit.splitlines() if line.startswith('Wants='))
         self.assertIn('sddm.service',wants)
         self.assertIn('Before=sddm.service',unit)
+    def test_archiso_preserves_session_and_command_execution_permissions(self):
+        permissions=module('permissions',ROOT/'scripts/export-iso-permissions.py')
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);command=root/'opt/granarch/payload/home/.local/share/gran/bin/gran-session'
+            command.parent.mkdir(parents=True);command.write_text('#!/bin/bash\n');command.chmod(0o755)
+            ordinary=command.with_name('config');ordinary.write_text('data');ordinary.chmod(0o644)
+            profile=root/'profiledef.sh';profile.write_text('declare -A file_permissions=()\n'+permissions.export(root))
+            result=subprocess.run(['bash','-c','source "$1"; printf "%s" "${file_permissions[/opt/granarch/payload/home/.local/share/gran/bin/gran-session]}"', 'bash',str(profile)],capture_output=True,text=True,check=True)
+            self.assertEqual(result.stdout,'0:0:755')
+            self.assertNotIn('/config',permissions.export(root))
     def test_symlink_cannot_redirect_profile(self):
         with tempfile.TemporaryDirectory() as directory,tempfile.TemporaryDirectory() as outside:
             home=Path(directory);(home/'.config').symlink_to(outside,target_is_directory=True)

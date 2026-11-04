@@ -43,6 +43,8 @@ file_permissions+=(
  ["/usr/local/libexec/granarch-calamares"]="0:0:755"
 )
 PROFILE
+# archiso defaults overlay files to 0644, even when Git stores them as executable.
+python3 "$project/scripts/export-iso-permissions.py" "$root" >> "$profile/profiledef.sh"
 ln -sf /etc/systemd/system/granarch-live.service "$root/etc/systemd/system/multi-user.target.wants/granarch-live.service"
 mkdir -p "$project/dist"
 printf 'Área de build preservada para diagnóstico: %s\n' "$work"
