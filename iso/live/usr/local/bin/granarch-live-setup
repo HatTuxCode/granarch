@@ -9,5 +9,3 @@ printf '[Desktop Entry]\nName=GranArch Live\nExec=/home/live/.local/share/gran/b
 install -d -o live -g live /home/live/Desktop /home/live/.local/share/applications
 printf '[Desktop Entry]\nType=Application\nName=Instalar GranArch\nExec=granarch-install-gui\nIcon=system-software-install\nCategories=System;\n' > /home/live/.local/share/applications/granarch-install.desktop
 chown live:live /home/live/.local/share/applications/granarch-install.desktop
-systemctl start NetworkManager.service bluetooth.service power-profiles-daemon.service
-systemctl start --no-block sddm.service

@@ -2,7 +2,7 @@
 Description=Prepare GranArch live desktop and graphical installer
 After=systemd-user-sessions.service
 Before=sddm.service
-Wants=NetworkManager.service
+Wants=NetworkManager.service bluetooth.service power-profiles-daemon.service sddm.service
 [Service]
 Type=oneshot
 ExecStart=/usr/local/bin/granarch-live-setup

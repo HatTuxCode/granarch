@@ -28,6 +28,15 @@ class InstallerTests(unittest.TestCase):
         for relative in ('.config/gtk-3.0/settings.ini','.config/gtk-4.0/settings.ini','.config/qt6ct/qt6ct.conf','.config/kitty/kitty.conf','.config/gran/scripts/sync-dolphin-zen.py','.local/share/gran/bin/gran-theme-sync','.local/share/gran/lib/dolphin_theme.py'):
             self.assertNotIn('9.9', (payload/relative).read_text(), relative)
         self.assertNotIn('font-size:',(payload/'.config/gran/scripts/sync-dolphin-zen.py').read_text())
+    def test_live_setup_does_not_wait_for_services_in_its_own_transaction(self):
+        setup=(ROOT/'iso/live/usr/local/bin/granarch-live-setup').read_text()
+        # Starting another service synchronously inside a boot oneshot can wait
+        # for the same boot transaction that is waiting for this oneshot.
+        self.assertNotRegex(setup, r'(?m)^systemctl start(?! --no-block)')
+        unit=(ROOT/'iso/live/etc/systemd/system/granarch-live.service').read_text()
+        wants=next(line for line in unit.splitlines() if line.startswith('Wants='))
+        self.assertIn('sddm.service',wants)
+        self.assertIn('Before=sddm.service',unit)
     def test_symlink_cannot_redirect_profile(self):
         with tempfile.TemporaryDirectory() as directory,tempfile.TemporaryDirectory() as outside:
             home=Path(directory);(home/'.config').symlink_to(outside,target_is_directory=True)
