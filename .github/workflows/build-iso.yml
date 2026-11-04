@@ -1,0 +1,63 @@
+name: Build GranArch ISO
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/build-iso.yml'
+      - 'iso/**'
+      - 'packaging/**'
+      - 'payload/**'
+      - 'scripts/**'
+      - 'manifests/**'
+      - 'install.sh'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: granarch-iso-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  iso:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Free space on the disposable runner
+        run: |
+          sudo rm -rf -- /usr/local/lib/android /opt/ghc /usr/share/dotnet
+          df -h .
+      - name: Build Calamares and ISO in Arch Linux
+        run: |
+          mkdir -p dist
+          set -o pipefail
+          docker run --rm --privileged \
+            --mount "type=bind,src=$GITHUB_WORKSPACE,dst=/workspace" \
+            --workdir /workspace \
+            --env MAKEFLAGS=-j2 \
+            --env CMAKE_BUILD_PARALLEL_LEVEL=2 \
+            archlinux:base-devel \
+            bash scripts/ci-build-iso.sh 2>&1 | tee dist/build.log
+      - name: Upload ISO and SHA-256
+        uses: actions/upload-artifact@v7
+        with:
+          name: granarch-iso-${{ github.run_number }}
+          path: |
+            dist/*.iso
+            dist/SHA256SUMS
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: granarch-build-log-${{ github.run_number }}
+          path: dist/build.log
+          if-no-files-found: ignore
+          retention-days: 7

@@ -53,6 +53,19 @@ pelas dependências Arch; não se tenta instalar RPMs no Arch. O manifesto insta
 é `manifests/packages.txt`. Não são copiados logins, perfis de navegador, Wi-Fi,
 chaves, histórico, clipboard ou dados pessoais. Contas precisam de novo login.
 
+## Gerar e baixar pelo GitHub
+
+O workflow **Build GranArch ISO** compila o Calamares e gera a ISO em um
+container Arch privilegiado num runner descartável do GitHub. Não exige VM local.
+Executa em pushes da `main` que alterem o instalador, ou manualmente em
+**Actions → Build GranArch ISO → Run workflow**.
+
+Após a execução ficar verde, abra **Artifacts → granarch-iso-N** e baixe a ISO
+com `SHA256SUMS`. O artefato fica disponível por sete dias; requer login no
+GitHub para download. O log também é disponibilizado quando o build falha.
+Isso gera a imagem; o boot e uma instalação completa ainda precisam ser testados
+em VM antes de instalar no notebook. Não há publicação automática em Releases.
+
 ## Gerar a ISO com Calamares
 
 Use uma VM ou máquina **Arch puro x86_64**, com espaço disponível para a ISO e
