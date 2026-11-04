@@ -1,0 +1,65 @@
+import hashlib, importlib.util, json, os, subprocess, sys, tempfile, unittest
+from pathlib import Path
+ROOT=Path(__file__).resolve().parents[1]
+def module(name,path):
+    spec=importlib.util.spec_from_file_location(name,path);result=importlib.util.module_from_spec(spec);spec.loader.exec_module(result);return result
+apply=module('apply',ROOT/'scripts/apply-home.py')
+folders=module('folders',ROOT/'payload/home/.local/share/gran/lib/breeze_folders.py')
+apps=module('apps',ROOT/'payload/home/.local/share/gran/lib/upstream-apps.py')
+class InstallerTests(unittest.TestCase):
+    def test_existing_files_recoverable_and_overrides_archived(self):
+        with tempfile.TemporaryDirectory() as directory:
+            home=Path(directory);config=home/'.config/hypr/hyprland.lua';config.parent.mkdir(parents=True);config.write_text('old configuration')
+            override=home/'.local/state/noctalia/settings.toml';override.parent.mkdir(parents=True);override.write_text('[shell]\nfont_family="old"\n')
+            backup=apply.apply(home)
+            self.assertEqual((backup/'.config/hypr/hyprland.lua').read_text(),'old configuration')
+            self.assertTrue((backup/'.local/state/noctalia/settings.toml').exists());self.assertFalse(override.exists())
+            self.assertNotIn('@HOME@',config.read_text());self.assertIn(str(home)+'/Work',config.read_text())
+            self.assertIn('SUPER + ALT + O',config.read_text())
+            self.assertIn('SUPER + SHIFT + D',config.read_text())
+            first=config.read_bytes();apply.apply(home);self.assertEqual(first,config.read_bytes())
+    def test_no_personal_font_sizes_or_universal_font_overrides(self):
+        import tomllib
+        payload=ROOT/'payload/home'
+        config=tomllib.loads((payload/'.config/noctalia/config.toml').read_text())
+        self.assertEqual(config['shell']['font_family'],'sans-serif')
+        self.assertAlmostEqual(config['accessibility']['ui_scale']*14,11)
+        self.assertFalse((payload/'.config/fontconfig').exists())
+        for relative in ('.config/gtk-3.0/settings.ini','.config/gtk-4.0/settings.ini','.config/qt6ct/qt6ct.conf','.config/kitty/kitty.conf','.config/gran/scripts/sync-dolphin-zen.py','.local/share/gran/bin/gran-theme-sync','.local/share/gran/lib/dolphin_theme.py'):
+            self.assertNotIn('9.9', (payload/relative).read_text(), relative)
+        self.assertNotIn('font-size:',(payload/'.config/gran/scripts/sync-dolphin-zen.py').read_text())
+    def test_symlink_cannot_redirect_profile(self):
+        with tempfile.TemporaryDirectory() as directory,tempfile.TemporaryDirectory() as outside:
+            home=Path(directory);(home/'.config').symlink_to(outside,target_is_directory=True)
+            with self.assertRaises(ValueError):apply.apply(home)
+            self.assertEqual(list(Path(outside).iterdir()),[])
+    def test_breeze_geometry_preserved_and_accent_replaced(self):
+        with tempfile.TemporaryDirectory() as directory:
+            home=Path(directory);source=home/'source';folder=source/'places/64';folder.mkdir(parents=True)
+            svg='<svg xmlns="http://www.w3.org/2000/svg"><path class="ColorScheme-Accent" style="fill:currentColor;opacity:0.6" d="M 4 6 L 4 11 z"/></svg>'
+            (folder/'folder.svg').write_text(svg)
+            self.assertEqual(folders.build(home,source),'GranBreezeNord')
+            result=(home/'.local/share/icons/GranBreezeNord/places/64/folder.svg').read_text()
+            self.assertIn('M 4 6 L 4 11 z',result);self.assertIn('fill:#8fa89b',result);self.assertIn('opacity:0.6',result)
+            self.assertIn('Inherits=breeze,hicolor',(home/'.local/share/icons/GranBreezeNord/index.theme').read_text())
+    def test_checksum_failure_refuses_installation(self):
+        from unittest.mock import patch
+        import io
+        with tempfile.TemporaryDirectory() as directory,patch.object(apps,'urlopen',return_value=io.BytesIO(b'tampered')):
+            with self.assertRaisesRegex(ValueError,'SHA-256'):
+                apps.download({'url':'https://github.com/example/release','sha256':'0'*64},Path(directory)/'asset')
+    def test_installer_refuses_fedora_before_mutation(self):
+        import platform
+        if 'ID=fedora' not in Path('/etc/os-release').read_text():self.skipTest('Guard test uses Fedora host')
+        result=subprocess.run(['bash',str(ROOT/'install.sh'),'--install'],capture_output=True,text=True)
+        self.assertNotEqual(result.returncode,0)
+        self.assertTrue('Arch Linux puro' in result.stderr or 'usuário comum' in result.stderr)
+    def test_native_validators_in_isolated_home(self):
+        import shutil
+        if not shutil.which('Hyprland') or not shutil.which('noctalia'):self.skipTest('Native validators unavailable')
+        with tempfile.TemporaryDirectory() as directory:
+            home=Path(directory);apply.apply(home);env=os.environ.copy();env['HOME']=str(home)
+            for command in [['noctalia','config','validate',str(home/'.config/noctalia/config.toml')],['Hyprland','--verify-config','--config',str(home/'.config/hypr/hyprland.lua')]]:
+                result=subprocess.run(command,env=env,capture_output=True,text=True,timeout=30)
+                self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+if __name__=='__main__':unittest.main()

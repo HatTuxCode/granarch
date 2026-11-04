@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
-ROOT=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
-bash "$ROOT/install.sh" --verify
-mkdir -p "$ROOT/dist"
-tar -czf "$ROOT/dist/granarch-bootstrap.tar.gz" --transform='s,^,GranArch/,' \
-  -C "$ROOT" --exclude=__pycache__ --exclude='*.pyc' \
-  install.sh README.md manifests docs scripts tests overlay snapshot licenses skills .gitignore
-(cd "$ROOT/dist" && sha256sum granarch-bootstrap.tar.gz > granarch-bootstrap.tar.gz.sha256)
-printf 'Bundle: %s/dist/granarch-bootstrap.tar.gz\n' "$ROOT"
+project=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+python3 "$project/scripts/verify.py"
+mkdir -p "$project/dist"
+tar -C "$project" --exclude=.git --exclude=.agents --exclude=.codex --exclude=.aws --exclude=dist --exclude=__pycache__ --exclude='*.pyc' --transform='s,^,granarch/,' -czf "$project/dist/granarch-installer.tar.gz" .
+cd "$project/dist"
+sha256sum granarch-installer.tar.gz > granarch-installer.tar.gz.sha256
+printf '%s\n' "$project/dist/granarch-installer.tar.gz"

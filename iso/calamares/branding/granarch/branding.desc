@@ -1,0 +1,20 @@
+---
+componentName: granarch
+welcomeStyleCalamares: true
+strings:
+  productName: GranArch
+  shortProductName: GranArch
+  version: '1.0'
+  shortVersion: '1.0'
+  versionedName: GranArch 1.0
+  shortVersionedName: GranArch 1.0
+  bootloaderEntryName: Arch Linux
+  productUrl: https://archlinux.org
+  supportUrl: https://wiki.archlinux.org
+  knownIssuesUrl: https://archlinux.org/news
+  releaseNotesUrl: https://archlinux.org/news
+style:
+  sidebarBackground: '#2e3440'
+  sidebarText: '#d8dee9'
+  sidebarTextSelect: '#2e3440'
+  sidebarTextHighlight: '#8fa89b'

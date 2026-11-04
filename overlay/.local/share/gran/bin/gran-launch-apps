@@ -1,3 +1,0 @@
-#!/usr/bin/env bash
-# gran:summary=Open the inherited Quickshell application launcher
-exec gran-shell gran.dock apps

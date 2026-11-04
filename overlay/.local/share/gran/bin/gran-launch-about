@@ -1,3 +1,0 @@
-#!/usr/bin/env bash
-# gran:summary=Mostrar a arte Gran e informações do sistema
-exec kitty --class gran-about --title "Sobre o Gran" -o initial_window_width=120c -o initial_window_height=42c -e bash -c 'fastfetch --config "$HOME/.config/fastfetch/config.jsonc"; printf "\n  Pressione Enter para fechar… "; read -r'

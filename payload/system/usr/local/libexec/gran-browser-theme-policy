@@ -1,0 +1,33 @@
+#!/usr/bin/python3
+"""Install only the two browser appearance policies from a bounded user record."""
+import json, os, re, tempfile
+from pathlib import Path
+SOURCE = Path('@HOME@/.local/state/gran/chromium-color.json')
+TARGET = Path('/etc/chromium/policies/managed/gran-colors.json')
+def validate(data):
+    if not isinstance(data, dict) or set(data) != {'BrowserThemeColor', 'BrowserColorScheme'}:
+        raise ValueError('Unexpected policy keys')
+    if not isinstance(data['BrowserThemeColor'], str) or not re.fullmatch(r'#[a-fA-F0-9]{6}', data['BrowserThemeColor']):
+        raise ValueError('Invalid theme color')
+    if data['BrowserColorScheme'] not in ('dark', 'light', 'device'):
+        raise ValueError('Invalid color scheme')
+    return json.dumps(data, sort_keys=True) + '\n'
+def main():
+    with SOURCE.open() as source:
+        payload = source.read(4097)
+    if len(payload) > 4096:
+        raise ValueError('Oversized policy')
+    value = validate(json.loads(payload))
+    TARGET.parent.mkdir(parents=True, exist_ok=True)
+    if TARGET.is_file() and not TARGET.is_symlink() and TARGET.read_text() == value:
+        return
+    fd, tmp = tempfile.mkstemp(prefix='.gran-colors-', dir=TARGET.parent)
+    try:
+        with os.fdopen(fd, 'w') as out:
+            out.write(value)
+        os.chmod(tmp, 0o644)
+        os.replace(tmp, TARGET)
+    finally:
+        if os.path.exists(tmp): os.unlink(tmp)
+if __name__ == '__main__':
+    main()

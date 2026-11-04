@@ -1,0 +1,7 @@
+[Unit]
+Description=Watch GranHat browser theme colors
+[Path]
+PathChanged=@HOME@/.local/state/gran/chromium-color.json
+Unit=gran-browser-theme.service
+[Install]
+WantedBy=multi-user.target

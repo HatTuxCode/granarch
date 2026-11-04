@@ -1,0 +1,7 @@
+[Unit]
+Description=Refresh Gran notebook power profile
+PartOf=graphical-session.target
+[Timer]
+OnActiveSec=5
+OnUnitActiveSec=30
+Unit=gran-adaptive-power.service

@@ -1,4 +1,0 @@
-/* Solicita blur ao compositor pelo protocolo de efeitos do GTK. */
-window.nautilus-window {
-  backdrop-filter: blur(20px);
-}

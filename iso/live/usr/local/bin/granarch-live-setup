@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -euo pipefail
+id live >/dev/null 2>&1 || useradd -m -u 1000 -G wheel -s /bin/fish live
+passwd -d live
+runuser -u live -- env HOME=/home/live python3 /opt/granarch/scripts/apply-home.py
+# Live ISO uses only the compositor/Noctalia; network installs happen in Calamares.
+install -d /usr/share/wayland-sessions
+printf '[Desktop Entry]\nName=GranArch Live\nExec=/home/live/.local/share/gran/bin/gran-session\nType=Application\nDesktopNames=Hyprland\n' > /usr/share/wayland-sessions/granarch-live.desktop
+install -d -o live -g live /home/live/Desktop /home/live/.local/share/applications
+printf '[Desktop Entry]\nType=Application\nName=Instalar GranArch\nExec=granarch-install-gui\nIcon=system-software-install\nCategories=System;\n' > /home/live/.local/share/applications/granarch-install.desktop
+chown live:live /home/live/.local/share/applications/granarch-install.desktop
+systemctl start NetworkManager.service bluetooth.service power-profiles-daemon.service
+systemctl start --no-block sddm.service

@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -euo pipefail
+command=${1:-}; (( $# == 0 )) || shift
+for package in "$@"; do [[ $package != -* ]] || { echo 'Informe nomes de pacotes, sem opções.' >&2; exit 2; }; done
+case "$command" in
+ search) exec pacman -Ss -- "$@" ;;
+ install) (( $# > 0 )) || exit 2; args=(-S --needed) ;;
+ remove) (( $# > 0 )) || exit 2; args=(-Rns) ;;
+ update) args=(-Syu) ;;
+ *) echo 'Uso: gran pkg search|install|remove|update [pacotes]' >&2; exit 2 ;;
+esac
+if (( EUID == 0 )); then exec pacman "${args[@]}" -- "$@"
+elif [[ -t 0 ]]; then exec sudo pacman "${args[@]}" -- "$@"
+else exec pkexec pacman "${args[@]}" -- "$@"; fi

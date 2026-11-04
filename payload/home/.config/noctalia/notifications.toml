@@ -1,0 +1,24 @@
+[notification]
+filter_order = ["gran_status", "kitty_status", "terminal_status"]
+
+[notification.filter.gran_status]
+enabled = true
+match = "GranHat"
+show_toast = true
+save_history = false
+play_sound = false
+
+[notification.filter.kitty_status]
+enabled = true
+match = "kitty"
+show_toast = true
+save_history = false
+play_sound = false
+
+[notification.filter.terminal_status]
+enabled = true
+match = "terminal"
+show_toast = true
+save_history = false
+play_sound = false
+

@@ -1,0 +1,50 @@
+#!/usr/bin/env python3
+"""Cycle and persist layouts independently for each workspace."""
+import fcntl
+import json
+import os
+from pathlib import Path
+import subprocess
+import sys
+MODES = ('dwindle','scrolling')
+def run(args):
+ return subprocess.check_output(['hyprctl',*args],text=True)
+def main():
+ action = sys.argv[1] if len(sys.argv)>1 else 'toggle'
+ argument = sys.argv[2] if len(sys.argv)>2 else None
+ directory = Path(os.environ.get('XDG_STATE_HOME',str(Path.home()/'.local/state')))/'gran/workspace-layouts'
+ directory.mkdir(parents=True,exist_ok=True)
+ with (directory/'lock').open('w') as lock:
+  fcntl.flock(lock,fcntl.LOCK_EX)
+  state = directory/'modes'
+  values = dict(line.split() for line in state.read_text().splitlines()) if state.exists() else {}
+  values = {key: (mode if mode in MODES else 'dwindle') for key, mode in values.items()}
+  if action == 'default':
+   if argument is None: print(values.get('default','dwindle'));return
+   if argument not in MODES: raise ValueError('Use dwindle ou scrolling')
+   # Preserve layouts of occupied workspaces when changing the default.
+   for workspace in json.loads(run(['-j','workspaces'])):
+    if workspace['id']>0 and workspace.get('windows',0)>0:
+     values.setdefault(str(workspace['id']),values.get('default',workspace.get('tiledLayout','dwindle')))
+   key, mode = 'default', argument
+  else:
+   workspace = json.loads(run(['-j','activeworkspace']))
+   key = str(workspace['id'])
+   if not key.isdecimal() or int(key)<1: raise ValueError('Use um workspace numerado')
+   current = values.get(key,values.get('default',workspace.get('tiledLayout') or 'dwindle'))
+   if current not in MODES: current = 'dwindle'
+   if action == 'current': print(current);return
+   if argument not in (None,'next','back'): raise ValueError('Use next ou back')
+   mode = MODES[(MODES.index(current)+(-1 if argument=='back' else 1))%len(MODES)]
+  values[key] = mode
+  # Evaluate every retained workspace as the default can otherwise rearrange it.
+  expression = '; '.join('gran_workspace_mode({ '+('default' if k=='default' else 'workspace')+' = "'+(v if k=='default' else k)+'"'+('' if k=='default' else ', mode = "'+v+'"')+' })' for k,v in sorted(values.items(),key=lambda item:item[0]!='default'))
+  result = run(['eval',expression])
+  if 'error' in result.lower(): raise RuntimeError(result)
+  temporary = directory/'modes.new'
+  temporary.write_text(''.join(k+' '+v+'\n' for k,v in sorted(values.items(),key=lambda item:item[0]!='default')))
+  temporary.replace(state)
+  subprocess.run(['notify-send','-a','GranHat','--hint=boolean:transient:true','-t','2500','Layout',mode],check=False)
+if __name__=='__main__':
+ try: main()
+ except (OSError,ValueError,RuntimeError,subprocess.CalledProcessError) as error: sys.exit(str(error))

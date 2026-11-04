@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# gran:summary=Open a CLI application in a Gran terminal
+set -euo pipefail
+[[ $# -gt 0 ]] || exit 2
+app_id="org.gran.$(basename "$1")"
+case "$1" in
+ btop|gran-launch-docker-tui)
+  exec kitty --start-as=normal --class "$app_id" --override remember_window_size=no --override initial_window_width=875 --override initial_window_height=600 -e "$@" ;;
+ *) exec kitty --start-as=normal --class "$app_id" -e "$@" ;;
+esac

@@ -1,6 +1,0 @@
-#!/bin/bash
-
-# gran:summary=Launch the Gran screensaver on every display.
-# gran:args=[force] [options]
-
-exec /usr/lib/gran-screensaver/gran-screensaver "$@"

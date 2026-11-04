@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# gran:summary=Open a normal tiled terminal without restoring maximized state
+exec kitty --class org.gran.terminal --start-as=normal --override remember_window_size=no "$@"

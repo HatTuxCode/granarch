@@ -1,0 +1,11 @@
+#!/usr/bin/env python3
+# gran:summary=Show the effective Noctalia theme name
+from pathlib import Path
+import tomllib
+home=Path.home()
+theme={}
+for path in (home/'.config/noctalia/config.toml', home/'.local/state/noctalia/settings.toml'):
+ if path.exists():theme.update(tomllib.loads(path.read_text()).get('theme',{}))
+source=theme.get('source','builtin')
+key={'custom':'custom_palette','builtin':'builtin','community':'community_palette'}.get(source)
+print(theme.get(key,source) if key else source)

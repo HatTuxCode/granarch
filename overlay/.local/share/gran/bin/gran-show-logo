@@ -1,3 +1,0 @@
-#!/usr/bin/env bash
-# gran:summary=Mostrar o símbolo Gran
-cat "$HOME/.config/gran/branding/about.txt"

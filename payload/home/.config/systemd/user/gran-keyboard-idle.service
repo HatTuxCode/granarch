@@ -1,0 +1,8 @@
+[Unit]
+Description=Gran keyboard backlight idle and resume policy
+PartOf=graphical-session.target
+After=graphical-session.target
+[Service]
+ExecStartPre=%h/.local/share/gran/bin/gran-brightness-keyboard restore
+ExecStart=/usr/bin/swayidle -w timeout 30 '%h/.local/share/gran/bin/gran-brightness-keyboard idle' resume '%h/.local/share/gran/bin/gran-brightness-keyboard restore' timeout 1200 '%h/.local/share/gran/bin/gran-screen-idle' resume '%h/.local/share/gran/bin/gran-screen-idle restore' before-sleep 'noctalia msg session lock' after-resume '%h/.local/share/gran/bin/gran-brightness-keyboard restore'
+Restart=on-failure

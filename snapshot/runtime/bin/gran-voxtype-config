@@ -1,8 +1,0 @@
-#!/bin/bash
-
-# gran:summary=Open Voxtype configuration
-
-set -e
-
-gran-launch-floating-terminal-with-presentation "voxtype configure"
-gran-restart-shell

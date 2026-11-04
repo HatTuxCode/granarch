@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -euo pipefail
+for file in /sys/class/power_supply/BAT*/charge_control_end_threshold; do
+  if [[ -w $file ]]; then printf '95\n' > "$file"; fi
+done

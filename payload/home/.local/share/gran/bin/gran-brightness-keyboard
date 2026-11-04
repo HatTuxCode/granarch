@@ -1,0 +1,39 @@
+#!/usr/bin/env python3
+# gran:summary=Control keyboard light and persist the selected level
+import fcntl
+from pathlib import Path
+import subprocess
+import sys
+
+def main():
+    devices = sorted(Path('/sys/class/leds').glob('*kbd_backlight*'))
+    if not devices: return
+    device = devices[0].name
+    state = Path.home()/'.local/state/gran/indicators'
+    state.mkdir(parents=True, exist_ok=True)
+    # Serialize hotkeys, idle blanking, and resume restoration.
+    with (state/'keyboard.lock').open('w') as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        saved = state/'kbd-backlight-default'
+        def get(field):
+            return int(subprocess.check_output(['brightnessctl','-d',device,field],text=True))
+        maximum, current = get('max'), get('get')
+        action = sys.argv[1] if len(sys.argv)>1 else 'cycle'
+        if action == 'idle':
+            if any(p.read_text().strip()=='1' for p in Path('/sys/class/power_supply').glob('*/online')):
+                return
+            level = 0
+        elif action == 'restore':
+            level = int(saved.read_text()) if saved.exists() else 1
+        else:
+            step = max(1, maximum//10)
+            if action == 'up': level = min(maximum,current+step)
+            elif action == 'down': level = max(0,current-step)
+            elif action == 'cycle': level = current+step if current+step<=maximum else 0
+            else: raise SystemExit('Use up, down, cycle, idle ou restore')
+        level = max(0,min(maximum,level))
+        subprocess.run(['brightnessctl','-d',device,'set',str(level)],check=True,stdout=subprocess.DEVNULL)
+        if action not in ('idle','restore'):
+            temporary = state/'keyboard.new'
+            temporary.write_text(str(level)+'\n');temporary.replace(saved)
+if __name__=='__main__': main()

@@ -1,0 +1,12 @@
+#!/usr/bin/env python3
+"""Open Dolphin at the focused Kitty process cwd, falling back to HOME."""
+import json, os
+from pathlib import Path
+import subprocess
+try:
+    window = json.loads(subprocess.check_output(['hyprctl','-j','activewindow'],text=True))
+    pid = window.get('pid') if window else None
+    cwd = Path(f'/proc/{pid}/cwd').resolve(strict=True) if pid else Path.home()
+except (OSError, ValueError, subprocess.CalledProcessError):
+    cwd = Path.home()
+os.execv(str(Path.home()/'.local/share/gran/bin/gran-launch-dolphin'), ['gran-launch-dolphin', str(cwd)])

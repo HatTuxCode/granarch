@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -euo pipefail
+export PATH="$HOME/.local/share/mise/shims:$HOME/.local/bin:$HOME/.local/share/gran/bin:$PATH"
+mkdir -p "$HOME/Work"
+exec kitty --start-as=normal --class org.gran.codex --directory "$HOME/Work" -e "$HOME/.local/share/gran/bin/gran-agent" codex "$@"

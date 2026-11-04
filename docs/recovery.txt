@@ -1,0 +1,3 @@
+Backup anterior: /home/granhat/.local/state/gran/backups/granarch-before-rebuild-20261104-181831
+Branch anterior: archive/before-native-arch-20261104-181831
+Histórico preservado também em history.bundle no backup. Nenhum force-push foi executado.

@@ -1,0 +1,27 @@
+{
+  "model": "ASUS ZenBook UX425EA",
+  "gpu": "Intel Iris Xe 8086:9a49 / i915",
+  "wifi": "Intel AX201 8086:a0f0 / iwlwifi + iwlmvm",
+  "audio": "Intel Tiger Lake / snd_sof_pci_intel_tgl",
+  "storage": [
+    "nvme",
+    "vmd"
+  ],
+  "card_reader": "rtsx_pci",
+  "firmware": [
+    "linux-firmware",
+    "sof-firmware",
+    "intel-ucode"
+  ],
+  "source": {
+    "os": "Fedora 45",
+    "hyprland": "0.57.1",
+    "noctalia": "5.4.1"
+  },
+  "desktop": {
+    "monitor_scale": 1.25,
+    "noctalia_font_family": "sans-serif",
+    "base_font_logical_px": 11,
+    "native_base_px": 14
+  }
+}

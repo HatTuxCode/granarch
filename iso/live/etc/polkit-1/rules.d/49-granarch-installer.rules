@@ -1,0 +1,8 @@
+// Only the live ISO's local, active user may launch this one graphical installer.
+polkit.addRule(function(action, subject) {
+    if (action.id == "org.freedesktop.policykit.exec" &&
+        action.lookup("program") == "/usr/local/libexec/granarch-calamares" &&
+        subject.user == "live" && subject.local && subject.active) {
+        return polkit.Result.YES;
+    }
+});

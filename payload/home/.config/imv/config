@@ -1,0 +1,7 @@
+[options]
+overlay = false
+background = 000000
+scaling_mode = full
+
+[binds]
+<Escape> = quit

@@ -1,0 +1,8 @@
+id = "granhat/updates"
+name = "Atualizações GranHat"
+version = "1.0.0"
+plugin_api = 24
+author = "GranHat"
+[[widget]]
+id = "updates"
+entry = "widget.luau"

@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# gran:summary=Open the Gran updater in a centered terminal
+exec kitty --start-as=normal --class org.gran.update --override remember_window_size=no --override initial_window_width=875 --override initial_window_height=600 --title 'Atualizações GranHat' -e "$HOME/.local/share/gran/bin/gran-update-terminal"

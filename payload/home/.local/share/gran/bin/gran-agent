@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Start a system-integrated coding agent in the user's Work directory.
+set -euo pipefail
+export GRAN_PATH="$HOME/.local/share/gran"
+export PATH="$HOME/.local/share/mise/shims:$HOME/.local/bin:$GRAN_PATH/bin:$PATH"
+agent="${1:?Use codex ou opencode}"
+shift
+mkdir -p "$HOME/Work"
+cd "$HOME/Work"
+case "$agent" in
+ codex)
+  exec codex --cd "$HOME/Work" --sandbox danger-full-access --ask-for-approval on-request "$@" ;;
+ opencode)
+  mkdir -p "$HOME/.cache/opencode-tmp"
+  export TMPDIR="$HOME/.cache/opencode-tmp"
+  exec opencode "$HOME/Work" "$@" ;;
+ *) printf 'Agente desconhecido: %s\n' "$agent" >&2; exit 2 ;;
+esac

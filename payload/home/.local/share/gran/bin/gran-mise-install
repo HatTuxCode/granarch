@@ -1,0 +1,66 @@
+#!/usr/bin/env python3
+"""Bootstrap official mise, verifying the release asset SHA-256 before execution."""
+from datetime import datetime, timezone
+import hashlib
+import json
+import os
+from pathlib import Path
+import re
+import shutil
+import subprocess
+import tempfile
+import urllib.request
+
+
+def request(url):
+    return urllib.request.urlopen(urllib.request.Request(url, headers={'User-Agent':'GranHat','Accept':'application/vnd.github+json'}),timeout=60)
+
+
+def select_asset(release):
+    tag=release.get('tag_name','')
+    if not re.fullmatch(r'v[0-9]+\.[0-9]+\.[0-9]+',tag): raise ValueError('Tag mise inválida')
+    name=f'mise-{tag}-linux-x64'
+    asset=next((a for a in release.get('assets',[]) if a['name']==name),None)
+    if asset is None: raise ValueError('Release mise não oferece binário linux-x64')
+    digest=asset.get('digest','')
+    if not re.fullmatch(r'sha256:[0-9a-f]{64}',digest): raise ValueError('Mise sem SHA-256 publicado; download recusado')
+    url=asset['browser_download_url']
+    if url != f'https://github.com/jdx/mise/releases/download/{tag}/{name}': raise ValueError('Origem mise inesperada')
+    return tag,url,digest[7:]
+
+
+def install(home, fetch=request):
+    existing=shutil.which('mise')
+    if existing:
+        subprocess.run([existing,'--version'],check=True)
+        print('Mise existente preservado:',existing)
+        return
+    target=home/'.local/bin/mise'
+    if target.exists() or target.is_symlink(): raise ValueError('~/.local/bin/mise já existe; confira PATH e permissões')
+    with fetch('https://api.github.com/repos/jdx/mise/releases/latest') as response: release=json.load(response)
+    tag,url,expected=select_asset(release)
+    target.parent.mkdir(parents=True,exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix='.mise-download-',dir=target.parent) as directory:
+        binary=Path(directory)/'mise'
+        digest=hashlib.sha256(); size=0
+        with fetch(url) as response,binary.open('wb') as output:
+            while chunk:=response.read(1024*1024):
+                size+=len(chunk)
+                if size > 256*1024*1024: raise ValueError('Download mise excede o limite de tamanho')
+                digest.update(chunk);output.write(chunk)
+        if digest.hexdigest()!=expected: raise ValueError('SHA-256 mise não confere; binário não executado')
+        binary.chmod(0o755)
+        subprocess.run([str(binary),'--version'],check=True)
+        os.replace(binary,target)
+    state=home/'.local/state/gran/mise-bootstrap.json'
+    state.parent.mkdir(parents=True,exist_ok=True)
+    state.write_text(json.dumps({'path':str(target),'tag':tag,'sha256':expected,'url':url},indent=2)+'\n')
+    print('Mise instalado:',target)
+
+
+if __name__=='__main__':
+    try:
+        if os.geteuid()==0: raise ValueError('Execute como usuário comum')
+        install(Path.home())
+    except (OSError,ValueError,subprocess.CalledProcessError) as error:
+        raise SystemExit(f'Gran mise: {error}')

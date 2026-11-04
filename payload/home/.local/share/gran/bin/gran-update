@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -euo pipefail
+[[ $EUID -ne 0 && $# == 0 ]] || { echo 'Execute gran update como usuário comum.' >&2; exit 2; }
+export PATH="$HOME/.local/share/mise/shims:$HOME/.local/bin:$HOME/.local/share/gran/bin:$PATH"
+sudo pacman -Syu
+mise upgrade
+mise reshim
+codex --version
+opencode --version
+printf 'Pacotes Arch e ferramentas mise atualizados.\n'

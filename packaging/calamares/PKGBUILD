@@ -1,0 +1,21 @@
+# GranArch packaging; upstream GPL-3.0-or-later.
+# Release/checksum cross-checked with AUR calamares 3.4.2-2 (2026-11-04).
+pkgname=calamares
+pkgver=3.4.2
+pkgrel=1
+pkgdesc='Distribution independent graphical installer'
+arch=(x86_64)
+url='https://codeberg.org/Calamares/calamares'
+license=(GPL-3.0-or-later)
+depends=(kcoreaddons kpmcore libpwquality qt6-declarative qt6-svg yaml-cpp python boost-libs)
+makedepends=(cmake ninja extra-cmake-modules qt6-tools qt6-translations boost pybind11)
+source=("$url/releases/download/v$pkgver/calamares-$pkgver.tar.gz")
+sha256sums=('733bbbb00dc9f84874bd5c22960952f317ea2537565431179fa2152b2fbfdccc')
+build() {
+ cmake -S "calamares-$pkgver" -B build -G Ninja \
+  -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_INSTALL_LIBDIR=lib \
+  -DWITH_QT6=ON -DINSTALL_CONFIG=ON -DBUILD_TESTING=OFF \
+  '-DSKIP_MODULES=dracut dracutlukscfg dummycpp dummyprocess dummypython dummypythonqt initramfs initramfscfg interactiveterminal packagechooser packagechooserq services-openrc'
+ cmake --build build
+}
+package() { DESTDIR="$pkgdir" cmake --install build; }

@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+set -euo pipefail
+action=${1:-}; name=${2:-}
+case "$name" in
+ chromium) exec gran-pkg "$action" chromium ;;
+ zen|installed)
+  case "$action" in
+   install|repair|update) exec python3 "$HOME/.local/share/gran/lib/upstream-apps.py" zen ;;
+   *) echo 'Uso: gran app install|repair|update zen' >&2; exit 2 ;;
+  esac ;;
+ *)
+  case "$action" in
+   install) exec gran-webapp-install "$name" ;;
+   remove) exec gran-webapp-install --remove "$name" ;;
+   *) echo 'Uso: gran app install|remove URL; install|repair|update zen; install chromium' >&2; exit 2 ;;
+  esac ;;
+esac

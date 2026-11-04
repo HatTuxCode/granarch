@@ -1,3 +1,0 @@
-module FathomTest
-singleton FakeSystem 1.0 FakeSystem.qml
-MockApp 1.0 MockApp.qml

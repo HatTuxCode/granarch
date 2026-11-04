@@ -1,0 +1,11 @@
+[Unit]
+Description=Prepare GranArch live desktop and graphical installer
+After=systemd-user-sessions.service
+Before=sddm.service
+Wants=NetworkManager.service
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/granarch-live-setup
+RemainAfterExit=yes
+[Install]
+WantedBy=multi-user.target

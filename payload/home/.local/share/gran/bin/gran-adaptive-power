@@ -1,0 +1,20 @@
+#!/usr/bin/env python3
+"""Restore the Gran AC/battery profiles using destination hardware capabilities."""
+import json
+from pathlib import Path
+import re
+import subprocess
+policy = json.loads((Path.home()/'.config/gran/notebook.json').read_text())
+supplies = Path('/sys/class/power_supply')
+try:
+    online = any(p.read_text().strip() == '1' for p in supplies.glob('*/online'))
+    batteries = [int(p.read_text()) for p in supplies.glob('*/capacity')]
+    if not batteries: raise SystemExit(0)
+    profile = policy['ac_profile'] if online else policy['low_battery_profile'] if min(batteries) <= policy['low_battery_percent'] else policy['battery_profile']
+    available = re.findall(r'(?m)^\s*\*?\s*(performance|balanced|power-saver):', subprocess.check_output(['powerprofilesctl','list'],text=True))
+    if profile not in available: profile = 'balanced' if 'balanced' in available else None
+    if profile:
+        current = subprocess.check_output(['powerprofilesctl','get'],text=True).strip()
+        if current != profile: subprocess.run(['powerprofilesctl','set',profile],check=True)
+except (OSError,ValueError,subprocess.CalledProcessError) as error:
+    raise SystemExit(f'Gran power profile: {error}')

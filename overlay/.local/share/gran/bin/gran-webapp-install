@@ -1,3 +1,0 @@
-#!/usr/bin/env bash
-# gran:summary=Create a web application shortcut in the application launcher
-exec gran-webapp install "$@"

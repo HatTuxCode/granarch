@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+set -euo pipefail
+[[ -n ${HYPRLAND_INSTANCE_SIGNATURE:-}${NIRI_SOCKET:-} ]] || exit 1
+# Replace old shell supervision on this destination only.
+for service in gran-shell.service gran-sleep-lock.service gran-kbd-backlight-monitor.service gran-adaptive-power.timer gran-media-stay-awake.timer; do
+ if systemctl --user cat "$service" >/dev/null 2>&1; then
+  systemctl --user is-enabled "$service" >> "$HOME/.local/state/gran/previous-service-states.txt" 2>&1 || true
+  systemctl --user disable --now "$service" || true
+ fi
+done
+dbus-update-activation-environment --systemd PATH WAYLAND_DISPLAY XDG_CURRENT_DESKTOP GRAN_PATH
+# Import only compositor variables that exist.
+for variable in HYPRLAND_INSTANCE_SIGNATURE NIRI_SOCKET; do
+ [[ -z ${!variable:-} ]] || dbus-update-activation-environment --systemd "$variable"
+done
+mkdir -p "$HOME/.local/state/gran"
+gran-touchpad restore
+systemctl --user start gran-adaptive-power.timer
+systemctl --user start gran-keyboard-idle.service
+# PAM already unlocked the login keyring; initialize Secret Service before Noctalia.
+gnome-keyring-daemon --start --components=secrets
+"$HOME/.local/share/gran/bin/gran-theme-sync" --quiet
+systemctl --user start gran-noctalia.service

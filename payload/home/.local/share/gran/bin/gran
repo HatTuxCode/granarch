@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+export GRAN_PATH="${GRAN_PATH:-$HOME/.local/share/gran}"
+export PATH="$HOME/.local/share/mise/shims:$HOME/.local/bin:$GRAN_PATH/bin:$PATH"
+command=${1:-help}
+(( $# == 0 )) || shift
+case "$command" in
+ tools) [[ ${1:-install} == install ]] || { echo "Uso: gran tools install" >&2; exit 2; }; exec "$GRAN_PATH/bin/gran-tools-install" ;;
+ pkg) exec "$GRAN_PATH/bin/gran-pkg" "$@" ;;
+ app) exec "$GRAN_PATH/bin/gran-app" "$@" ;;
+ theme) [[ ${1:-sync} == sync ]] || { echo 'Uso: gran theme sync' >&2; exit 2; }; exec "$GRAN_PATH/bin/gran-theme-sync" ;;
+ session) exec "$GRAN_PATH/bin/gran-session" "$@" ;;
+ doctor) exec "$GRAN_PATH/bin/gran-doctor" "$@" ;;
+ update) exec "$GRAN_PATH/bin/gran-update" "$@" ;;
+ sources) cat "$GRAN_PATH/sources.json" ;;
+ version) cat "$GRAN_PATH/version" ;;
+ *) printf 'GranHat: gran session | doctor | update | tools install | theme sync | app | pkg | sources | version\n' ;;
+esac

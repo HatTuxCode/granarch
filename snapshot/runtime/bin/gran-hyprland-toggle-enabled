@@ -1,6 +1,0 @@
-#!/bin/bash
-
-# gran:summary=Check if a Hyprland toggle is currently enabled.
-# gran:args=<flag-name>
-
-[[ -f "$HOME/.local/state/gran/toggles/hypr/$1.lua" ]]

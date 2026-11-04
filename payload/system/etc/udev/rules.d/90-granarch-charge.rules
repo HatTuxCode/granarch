@@ -1,0 +1,1 @@
+SUBSYSTEM=="power_supply", ACTION=="add", RUN+="/usr/local/libexec/gran-charge-limit"

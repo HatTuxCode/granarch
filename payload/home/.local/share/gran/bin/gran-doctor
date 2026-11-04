@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -u
+failures=0
+check() { if "$@"; then printf 'OK: %s\n' "$*"; else printf 'FALHOU: %s\n' "$*"; failures=$((failures+1)); fi; }
+for command in start-hyprland Hyprland hyprctl noctalia kitty fish dolphin zen-browser chromium mise codex opencode btop docker lazydocker eza bat fzf zoxide rg fd tmux nvim starship; do check command -v "$command"; done
+check Hyprland --verify-config --config "$HOME/.config/hypr/hyprland.lua"
+check noctalia config validate "$HOME/.config/noctalia/config.toml"
+check mise --version
+check codex --version
+check opencode --version
+check test -f /etc/pam.d/login
+check test "$(xdg-mime query default inode/directory)" = org.kde.dolphin.desktop
+check test "$(xdg-settings get default-web-browser)" = zen-browser.desktop
+if [[ -n ${HYPRLAND_INSTANCE_SIGNATURE:-} ]]; then
+ check hyprctl -j activewindow
+ check pgrep -u "$(id -u)" -x noctalia
+else echo 'PENDENTE: execute gran doctor dentro da sessão Hyprland/Noctalia.'; fi
+printf '%s falha(s).\n' "$failures"
+exit "$(( failures > 0 ))"

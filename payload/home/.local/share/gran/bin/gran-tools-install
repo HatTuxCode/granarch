@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# Install native Codex/OpenCode binaries under mise, keeping user data/configs.
+set -euo pipefail
+[[ $EUID -ne 0 ]] || { echo 'Execute como usuário comum.' >&2; exit 1; }
+export GRAN_PATH="${GRAN_PATH:-$HOME/.local/share/gran}"
+export PATH="$HOME/.local/share/mise/shims:$HOME/.local/bin:$GRAN_PATH/bin:$PATH"
+python3 "$GRAN_PATH/bin/gran-mise-install"
+if [[ -f $HOME/.config/mise/config.toml ]]; then
+ backup="$HOME/.local/state/gran/mise-backups/$(date -u +%Y%m%dT%H%M%S)-$$"
+ mkdir -p "$backup"
+ cp -a "$HOME/.config/mise/config.toml" "$backup/config.toml"
+fi
+# Explicit backends avoid an npm postinstall dependency for either native CLI.
+mise use --global aqua:openai/codex@latest aqua:anomalyco/opencode@latest aqua:jesseduffield/lazydocker@latest aqua:starship/starship@latest
+mise reshim
+mise exec aqua:openai/codex -- codex --version
+mise exec aqua:anomalyco/opencode -- opencode --version
+# Check exactly the ordinary commands available to Kitty/fish and app launchers.
+codex --version
+opencode --version
+
+lazydocker --version
+starship --version

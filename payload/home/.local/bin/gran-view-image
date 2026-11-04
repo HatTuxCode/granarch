@@ -1,0 +1,25 @@
+#!/usr/bin/python3
+import json, os, subprocess, sys
+from PIL import Image
+args = sys.argv[1:]
+geometry = []
+if args:
+    try:
+        with Image.open(args[0]) as image:
+            width, height = image.size
+            if image.getexif().get(274, 1) in (5, 6, 7, 8):
+                width, height = height, width
+        monitors = json.loads(subprocess.check_output(['hyprctl', '-j', 'monitors']))
+        monitor = next((m for m in monitors if m.get('focused')), monitors[0])
+        scale = monitor['scale']
+        mw, mh = monitor['width'], monitor['height']
+        if monitor.get('transform', 0) in (1, 3, 5, 7):
+            mw, mh = mh, mw
+        left, top, right, bottom = monitor.get('reserved', [0, 0, 0, 0])
+        available_w = min(875, mw / scale - left - right - 24)
+        available_h = min(600, mh / scale - top - bottom - 24)
+        ratio = min(1 / scale, available_w / width, available_h / height)
+        geometry = ['-W', str(max(1, round(width * ratio))), '-H', str(max(1, round(height * ratio)))]
+    except (OSError, ValueError, KeyError, IndexError, subprocess.SubprocessError):
+        pass
+os.execv('/usr/bin/imv', ['imv', *geometry, *args])

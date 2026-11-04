@@ -1,7 +1,0 @@
-#!/bin/bash
-
-# gran:summary=Apply the current theme keyboard color to supported keyboards
-# gran:hidden=true
-
-gran-theme-set-keyboard-asus-rog
-gran-theme-set-keyboard-f16

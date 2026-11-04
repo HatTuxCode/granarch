@@ -1,0 +1,9 @@
+/* Gran palette: opaque menu paint and readable toolbar labels. */
+QMenu { background-color: #2e3440; color: #d8dee9; border: 1px solid #adb5c4; padding: 4px; qproperty-windowOpacity: 1.0; }
+QMenu::item { background-color: transparent; color: #d8dee9; padding: 5px 24px; }
+QMenu::item:selected, QMenuBar::item:selected { background-color: #81a1c1; color: #2e3440; }
+QMenu::item:disabled { color: #adb5c4; }
+QMenu::separator { height: 1px; background: #3b4252; margin: 4px 8px; }
+QMenuBar, QToolBar { background-color: #2e3440; color: #d8dee9; }
+QToolButton { color: #d8dee9; }
+QToolButton:hover { background-color: #3b4252; }

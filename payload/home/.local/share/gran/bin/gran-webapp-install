@@ -1,0 +1,186 @@
+#!/usr/bin/env python3
+"""Install a site as a Chromium app in the user's application menu."""
+import hashlib
+from html.parser import HTMLParser
+import os
+from pathlib import Path
+import re
+import shutil
+import subprocess
+import sys
+import time
+from urllib.parse import urlsplit, urlunsplit, urljoin
+from urllib.request import Request, urlopen
+
+
+def normalize(value):
+    if not value or any(c.isspace() or ord(c) < 32 for c in value) or '\\' in value:
+        raise ValueError('URL inválida: use um endereço HTTP/HTTPS sem espaços.')
+    if '://' not in value:
+        if re.match(r'^(javascript|data|file|mailto):', value, re.I):
+            raise ValueError('Use somente URLs HTTP/HTTPS.')
+        value = 'https://' + value
+    parts = urlsplit(value)
+    if parts.scheme.lower() not in ('https', 'http') or not parts.hostname or parts.username or parts.password:
+        raise ValueError('Use somente URLs HTTP/HTTPS sem credenciais.')
+    parts.port  # Validate malformed ports before writing anything.
+    return urlunsplit((parts.scheme.lower(), parts.netloc.lower(), parts.path or '/', parts.query, parts.fragment))
+
+
+def field(value):
+    return value.replace('\\', '\\\\').replace('\n', '\\n').replace('\r', '\\r').replace('\t', '\\t')
+
+
+def argument(value):
+    return '"' + ''.join('\\' + c if c in '\\"`$' else '%%' if c == '%' else c for c in value) + '"'
+
+
+def app_identity(url):
+    host = urlsplit(url).hostname
+    return 'gran-webapp-' + re.sub('[^a-z0-9-]', '-', host.lower())[:60] + '-' + hashlib.sha256(url.encode()).hexdigest()[:12]
+
+
+def short_name(value):
+    """Drop title taglines while preserving hyphens inside brand names."""
+    return re.split(r'\s+[-–—|•:]\s+', ' '.join(value.split()), maxsplit=1)[0][:100]
+
+
+def remove(value):
+    url = normalize(value)
+    home = Path.home()
+    identity = app_identity(url)
+    applications = home / '.local/share/applications'
+    desktop = applications / (identity + '.desktop')
+    if not desktop.is_file() or desktop.is_symlink():
+        raise ValueError(f'Web app não encontrado: {url}')
+    if 'X-GranHat-WebApp=true' not in desktop.read_text().splitlines():
+        raise ValueError('O atalho não é um web app gerenciado pelo GranHat.')
+    icons = home / '.local/share/icons/hicolor/256x256/apps'
+    targets = [desktop] + [icons / (identity + suffix) for suffix in ('.png', '.ico')]
+    backup = home / '.local/state/gran/backups' / ('webapp-remove-' + str(time.time_ns()))
+    # Copy every file before removing any, so a failed backup keeps the app intact.
+    for target in targets:
+        if target.is_symlink():
+            raise ValueError('Arquivo do web app é um link simbólico; remoção interrompida.')
+        if target.exists():
+            saved = backup / target.relative_to(home)
+            saved.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(target, saved)
+    for target in targets:
+        target.unlink(missing_ok=True)
+    if shutil.which('update-desktop-database'):
+        subprocess.run(['update-desktop-database', str(applications)], check=True)
+    print(f'Removido: {url}\nBackup: {backup}')
+
+
+class Metadata(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.title = ''
+        self.app_names = {}
+        self.in_title = False
+        self.icons = []
+
+    def handle_starttag(self, tag, attrs):
+        attrs = dict(attrs)
+        if tag == 'meta':
+            key = (attrs.get('name') or attrs.get('property') or '').lower()
+            if key in ('application-name', 'apple-mobile-web-app-title', 'og:site_name') and attrs.get('content'):
+                self.app_names[key] = attrs['content']
+        if tag == 'title':
+            self.in_title = True
+        if tag == 'link' and 'icon' in attrs.get('rel', '').lower() and attrs.get('href'):
+            self.icons.append(attrs['href'])
+
+    def handle_endtag(self, tag):
+        if tag == 'title':
+            self.in_title = False
+
+    def handle_data(self, data):
+        if self.in_title:
+            self.title += data
+
+
+def fetch(url, limit):
+    normalize(url)
+    with urlopen(Request(url, headers={'User-Agent': 'Mozilla/5.0 GranHat-WebApp'}), timeout=8) as response:
+        if urlsplit(response.url).scheme not in ('http', 'https'):
+            raise ValueError('Redirecionamento inválido')
+        data = response.read(limit + 1)
+        if len(data) > limit:
+            raise ValueError('Resposta muito grande')
+        return data, response.url, response.headers.get_content_charset() or 'utf-8'
+
+
+def install(value):
+    url = normalize(value)
+    launcher = Path(__file__).resolve().with_name('gran-launch-chromium')
+    if not launcher.is_file() or not shutil.which('chromium'):
+        raise ValueError('Instale o Chromium primeiro: gran app install chromium')
+    home = Path.home()
+    host = urlsplit(url).hostname
+    identity = app_identity(url)
+    metadata = Metadata()
+    base = url
+    try:
+        page, base, encoding = fetch(url, 2 * 1024 * 1024)
+        metadata.feed(page.decode(encoding, errors='replace'))
+    except Exception as error:
+        print(f'Aviso: metadados indisponíveis ({type(error).__name__}); usando o domínio.')
+    preferred = next((metadata.app_names[key] for key in
+                      ('application-name', 'apple-mobile-web-app-title', 'og:site_name')
+                      if metadata.app_names.get(key, '').strip()), metadata.title)
+    title = short_name(preferred) or host.removeprefix('www.')
+    icon_value = 'chromium'
+    icon_data = None
+    for candidate in list(reversed(metadata.icons))[:6] + ['/apple-touch-icon.png', '/favicon.ico']:
+        try:
+            data, _, _ = fetch(urljoin(base, candidate), 2 * 1024 * 1024)
+            extension = 'png' if data.startswith(b'\x89PNG\r\n\x1a\n') else 'ico' if data.startswith(b'\x00\x00\x01\x00') else None
+            if extension:
+                icon_data = data
+                icon_value = str(home / '.local/share/icons/hicolor/256x256/apps' / (identity + '.' + extension))
+                break
+        except Exception:
+            continue
+    desktop = home / '.local/share/applications' / (identity + '.desktop')
+    targets = [desktop] + ([Path(icon_value)] if icon_data else [])
+    backup = home / '.local/state/gran/backups' / ('webapp-' + str(time.time_ns()))
+    for target in targets:
+        if target.exists():
+            saved = backup / target.relative_to(home)
+            saved.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(target, saved)
+    if icon_data:
+        icon = Path(icon_value)
+        icon.parent.mkdir(parents=True, exist_ok=True)
+        icon.write_bytes(icon_data)
+    # Chromium's native Wayland app_id is derived from the URL, even with --class.
+    window_class = ('chrome-' + host.lower() + '_' + urlsplit(url).path + '-Default').replace('/', '_')
+    command = ' '.join(argument(arg) for arg in [str(launcher), '--app=' + url])
+    content = '[Desktop Entry]\nVersion=1.0\nType=Application\n'
+    content += f'Name={field(title)}\nComment=Aplicativo web: {field(host)}\nExec={field(command)}\n'
+    content += f'Icon={field(icon_value)}\nStartupWMClass={field(window_class)}\n'
+    content += 'Terminal=false\nCategories=Network;\nStartupNotify=true\n'
+    content += f'X-GranHat-WebApp=true\nX-GranHat-URL={field(url)}\n'
+    desktop.parent.mkdir(parents=True, exist_ok=True)
+    temporary = desktop.with_suffix('.tmp')
+    temporary.write_text(content)
+    temporary.replace(desktop)
+    if shutil.which('update-desktop-database'):
+        subprocess.run(['update-desktop-database', str(desktop.parent)], check=True)
+    print(f'Instalado: {title}\nURL: {url}\nAtalho: {desktop}')
+
+
+if __name__ == '__main__':
+    try:
+        if os.geteuid() == 0:
+            raise ValueError('Execute como seu usuário, sem sudo.')
+        if len(sys.argv) == 3 and sys.argv[1] == '--remove':
+            remove(sys.argv[2])
+        elif len(sys.argv) == 2:
+            install(sys.argv[1])
+        else:
+            raise ValueError('Uso: gran app install URL ou gran app remove URL')
+    except (ValueError, OSError, subprocess.CalledProcessError) as error:
+        raise SystemExit(f'gran webapp: {error}')

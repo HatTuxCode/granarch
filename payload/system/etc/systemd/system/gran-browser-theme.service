@@ -1,0 +1,11 @@
+[Unit]
+Description=Sync GranHat browser appearance policies
+[Service]
+Type=oneshot
+TimeoutStartSec=10
+ExecStart=/usr/local/libexec/gran-browser-theme-policy
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/etc/chromium/policies/managed
+ProtectHome=read-only
+PrivateTmp=true

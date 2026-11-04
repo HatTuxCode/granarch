@@ -1,0 +1,8 @@
+[Unit]
+Description=Restore Gran battery charge limit when supported
+After=systemd-udev-settle.service
+[Service]
+Type=oneshot
+ExecStart=/usr/local/libexec/gran-charge-limit
+[Install]
+WantedBy=multi-user.target

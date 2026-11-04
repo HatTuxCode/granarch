@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+set -uo pipefail
+mkdir -p "$HOME/.local/state/gran"
+exec 9>"$HOME/.local/state/gran/update.lock"
+if flock -n 9; then
+ gran update
+ status=$?
+ if (( status == 0 )); then
+  rm -f "$HOME/.cache/gran/updates.json"
+  if gran-update-check --refresh; then
+   printf '\nAtualização concluída.\n'
+  else
+   printf '\nPacotes atualizados, mas houve falha ao consultar novas atualizações. Confira as mensagens acima.\n'
+  fi
+ else printf '\nAtualização interrompida (código %s). Confira as mensagens acima.\n' "$status"; fi
+else printf 'Já existe uma atualização em andamento.\n'; fi
+read -r -p 'Pressione Enter para fechar.' _

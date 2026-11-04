@@ -1,5 +1,0 @@
-#!/bin/bash
-
-# gran:summary=Toggle the current weather panel
-
-gran-shell shell toggle gran.weather

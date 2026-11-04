@@ -1,0 +1,7 @@
+[Unit]
+Description=GranHat Noctalia shell
+PartOf=graphical-session.target
+[Service]
+ExecStart=/usr/bin/noctalia
+Restart=on-failure
+RestartSec=2

@@ -1,5 +1,0 @@
-#!/bin/bash
-
-# gran:summary=Reload hyprland configuration (used by the Gran theme switching).
-
-hyprctl reload >/dev/null

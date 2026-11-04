@@ -1,271 +1,150 @@
 # GranArch
 
-Pós-instalador para um EndeavourOS mínimo, Arch Linux enxuto ou CachyOS com o seu desktop atual, portado para
-**Gran**. A ISO será montada depois da validação e dos ajustes.
+Instalador de **Arch Linux puro**, com o ambiente da máquina GranHat/Fedora
+migrado para pacman: Hyprland Lua, Noctalia nativo v5, programas, atalhos,
+políticas de energia e integração de temas. O instalador gráfico usa **Calamares**,
+o mesmo framework utilizado pelo EndeavourOS, com configuração própria.
 
-O sistema não usa repositório, mirror, chave ou pacote do Omarchy. Hyprland,
-Quickshell, Kitty, fish, mise, SDDM e Plymouth são pacotes oficiais do Arch,
-construídos dos projetos upstream. Zen vem dos releases oficiais de
-`zen-browser/desktop`, com SHA-256 verificado. Os ícones e o cursor Yaru são
-compilados de `ubuntu/yaru`. Veja [as fontes](manifests/sources.json).
+O projeto foi reconstruído a partir da configuração efetiva de 04/11/2026.
+O código antigo está preservado na branch `archive/before-native-arch-*`.
+O Fedora instalado não é alterado pelos comandos de verificação ou de build.
 
-A configuração e o código do shell foram derivados da instalação atual, com
-atribuição e licença preservadas, e portados para `gran`. Os mecanismos de
-repositório, provisionamento, migração e factory reset da distribuição de origem
-foram removidos. Os motores Hyprland e Quickshell não são forks dessa distribuição.
+**Estado:** código e perfil preparados; verificações locais passaram.
+A ISO ainda precisa ser compilada num host Arch e a instalação completa precisa
+ser testada numa VM UEFI. Não há ISO publicada nem boot comprovado.
 
-## O que será instalado
+## O ambiente instalado
 
-- Nord, wallpaper atual, sua barra Quickshell, plugins, blur, opacidade, gestos,
-  monitores, teclado e **todos os módulos de atalhos originais**.
-- Zen padrão, Kitty com o cursor trail atual, todos os seus ajustes e fish.
-- Node LTS, Codex CLI e OpenCode pelo mise.
-- Skills `gran`, `gran-app` e `gran-diagnose`, descobertas por Codex e OpenCode
-  em `~/.agents/skills`.
-- Lançador de aplicativos herdado e menu amplo com Setup, instalar/remover
-  pacotes, Web Apps, AUR e catálogo opcional. Veja [o menu](docs/menu.md).
-- Boot silencioso, tema Plymouth atual para o unlock do disco e SDDM com
-  autologin na sessão Gran, reproduzindo o fluxo deste notebook.
-- As políticas de energia e backlight do notebook, incluindo carga máxima 95%,
-  luz do teclado após 30s na bateria e regra da tela de 20min com bateria <=25%.
-- A paleta compartilhada em GTK3, GTK4/libadwaita, Qt por GTK/Fusion, Kitty,
-  programas de terminal e a interface do Zen.
+- Hyprland >= 0.57.1 com Lua; Noctalia >= 5.4.1 nativo, sem Quickshell.
+- Monitor em **125%**. Noctalia usa sua família padrão `sans-serif`, base lógica
+  **11 px** (`ui_scale=11/14`) e tamanhos relativos nativos. A barra também recebe
+  base de 11 px. Isso corresponde a cerca de 13,75 pixels físicos em escala 125%.
+  Os ajustes pessoais de fontes de Kitty, GTK, Qt e Zen não são importados;
+  esses aplicativos conservam suas fontes e tamanhos nativos.
+- Barra com disposição efetiva da origem: launcher, bolinhas dos workspaces e
+  janela ativa; relógio brasileiro e clima; tray, RAM, temperatura, CPU,
+  atualizações, Bluetooth, rede, volume, brilho, energia, bateria e sessão.
+  Dimensões, margens, opacidade e cantos preservados; monitores sem barrinhas.
+- Paleta Nord compartilhada entre Noctalia, GTK, Qt/Dolphin, Kitty, btop, Zen e
+  Chromium; modo noturno sempre ativo em 4500 K.
+- Desenho original das pastas **KDE Breeze**, com tom verde-cinza **#8fa89b**.
+  O tema local `GranBreezeNord` altera apenas a cor de acento dos SVGs de pastas;
+  demais ícones são herdados do Breeze. Cursor Breeze. **Sem Yaru**.
+- Janelas com opacidade 90%/60%, blur, raio 4, bordas 2, gaps 3/6 e regras atuais.
+  Diálogos do virt-manager centralizados em 900×600; consoles seguem o layout.
+- Todos os atalhos do `hyprland.lua` atual, incluindo Codex, OpenCode, TUIOS,
+  GranControl, terminal, Dolphin, Docker, screenshots e clipboard adaptado.
+- Dwindle e scrolling; workspace vazio extra e indicadores de bolinhas.
+- Touchpad com **arraste/seleção com três dedos** (`drag_3fg=1`), toque para clicar
+  e rolagem natural. Teclas Fn de áudio, microfone, tela, luz do teclado e touchpad.
+- Perfis: performance na tomada, balanced na bateria, power-saver até 25%, com
+  fallback para capacidades reais. Limite de carga 95% quando suportado.
+  Luz do teclado apaga após 30 s na bateria; tela após 20 min em bateria <=25%.
+  Tampa suspende inclusive na tomada/dock; bloqueio solicitado antes de suspender.
+- Kitty, fish, Dolphin, Chromium, Zen, imv, btop, fastfetch, Neovim, tmux,
+  ferramentas de terminal, Docker/lazydocker e virtualização QEMU/libvirt.
+  Codex/OpenCode/lazydocker/Starship via **mise aqua**, sem npm postinstall.
+  Zen e TUIOS: releases oficiais com SHA-256 fixado no manifesto.
+- SDDM com senha e GNOME Keyring; Docker sem adicionar usuário ao grupo docker.
 
-Os atalhos vêm da configuração Gran atual do notebook, com seus caminhos
-adaptados para o usuário de destino. `Super+Shift+T` e `Super+Enter` usam o
-terminal padrão Kitty; `Ctrl+Super+Alt+T` abre o btop flutuante e centralizado.
-Aplicativos opcionais referenciados pelos atalhos, como TUIOS e GranCtrl,
-continuam dependendo da instalação desses aplicativos.
+A lista de pacotes do Fedora está em `manifests/source-fedora-packages.txt` para
+rastreabilidade. Bibliotecas e pacotes internos da distribuição são substituídos
+pelas dependências Arch; não se tenta instalar RPMs no Arch. O manifesto instalável
+é `manifests/packages.txt`. Não são copiados logins, perfis de navegador, Wi-Fi,
+chaves, histórico, clipboard ou dados pessoais. Contas precisam de novo login.
 
-## Usar no EndeavourOS mínimo ou Arch novo
+## Gerar a ISO com Calamares
 
-Para baixar pelo repositório:
-
-```bash
-sudo pacman -Syu --needed git
-git clone https://github.com/HatTuxCode/granarch.git
-cd granarch
-bash install.sh --verify
-bash install.sh --check
-bash install.sh --install
-```
-
-Execute os comandos como usuário comum; somente o pacman e as etapas internas
-que precisam de privilégio usam sudo. Se `--check` falhar, corrija o erro antes
-de executar `--install`.
-
-Se o repositório for privado, autentique seu acesso GitHub antes de cloná-lo.
-Não é necessário baixar o pacote de distribuição quando o projeto é clonado.
-
-Instale um EndeavourOS mínimo (instalação online, opção sem desktop) ou Arch básico x86_64 com bootloader funcionando, internet, usuário comum,
-sudo e locale `en_US.UTF-8`. Para conservar o unlock de disco como no notebook
-atual, escolha criptografia LUKS durante a instalação básica. O script não
-particiona nem transforma um disco existente em criptografado.
-
-Copie a pasta inteira para o Arch novo ou use o pacote pronto:
+Use uma VM ou máquina **Arch puro x86_64**, com espaço disponível para a ISO e
+compilação. Não execute o instalador sobre a máquina Fedora de referência.
 
 ```bash
-tar -xzf granarch-bootstrap.tar.gz
-cd GranArch
-bash install.sh                    # apenas visualizar
-bash install.sh --verify
-bash install.sh --check              # conferir o destino, sem instalar
-bash install.sh --install          # assistente de pós-instalação
+sudo pacman -Syu --needed base-devel git archiso cmake ninja
+cd packaging/calamares
+makepkg -s
+cd ../..
+sudo scripts/build-iso.sh packaging/calamares/calamares-3.4.2-1-x86_64.pkg.tar.zst
 ```
 
-O assistente mostra o plano antes de pedir `INSTALAR` e mantém as confirmações do
-pacman. Os pacotes estão em [manifests/packages.txt](manifests/packages.txt);
-ASUS/Intel recebem os componentes de hardware pertinentes. Não instale sobre a
-máquina de origem: o assistente recusa convertê-la.
+A receita compila o Calamares upstream 3.4.2 com checksum fixo. O pacote é colocado
+num repositório local **somente durante o build da ISO**, sem adicionar repositório
+EndeavourOS, CachyOS ou Omarchy ao destino. A base e os programas vêm dos
+repositórios oficiais Arch. A ISO e `SHA256SUMS` saem em `dist/`.
 
-Após reiniciar, o SDDM inicia a sessão Gran conforme o plano. Pelo TTY, a
-alternativa é `gran session`. Execute `gran doctor` dentro do desktop.
+O build usa o perfil `releng` do archiso instalado, com desktop live Hyprland e
+Noctalia. Na sessão live, abra **Instalar GranArch** pelo launcher (`Super+Space`).
+O usuário live tem login automático apenas na ISO; o destino usa senha.
 
-No EndeavourOS, o instalador preserva dracut, kernel-install, o kernel e o
-bootloader. Não instala mkinitcpio/Plymouth nem modifica o boot nesse fluxo;
-o SDDM e a sessão Gran são configurados normalmente. Use a instalação online
-com **No Desktop / sem desktop**, usuário comum, sudo e NetworkManager.
+O Calamares apresenta idioma, teclado, particionamento, usuário e resumo antes
+de gravar. O fluxo é **online**: baixa pacotes Arch com `pacstrap` e aplica o perfil
+após criar o usuário. É necessária internet também para mise, Zen e TUIOS.
+Não há particionamento silencioso por scripts. Criptografia e boot pelo Calamares
+precisam de teste específico em VM antes de serem considerados suportados.
 
-No CachyOS, os pacotes seguem a prioridade dos repositórios já configurados,
-incluindo as variantes otimizadas. Kernel, initramfs e boot são preservados por
-padrão. O visual Plymouth do Gran fica restrito ao fluxo de boot suportado do
-Arch; `--boot` exige mkinitcpio e boot sem gerenciadores da distribuição; não é suportado no EndeavourOS.
+## Alternativas pelo terminal
 
-O instalador cria as pastas auxiliares mesmo em um HOME vazio, verifica os
-pacotes e versões disponíveis antes de aplicar o desktop e registra a execução
-em `~/.local/state/gran/install-backups/<data>/install.log`. A pré-verificação usa
-as bases locais do pacman; se estiverem antigas, execute `sudo pacman -Syu`.
-
-Opções de instalação: `--check`, `--boot`, `--no-boot`, `--no-login`, `--no-autologin`,
-`--no-change-shell`, `--no-services` e `--no-yaru`.
-Confira [instalação](docs/installation.md) e
-[boot, energia e cores](docs/boot-power-theme.md).
-
-## Atualizar a aparência em uma instalação existente
-
-Depois de publicar esta versão, no EndeavourOS que já tem o GranArch:
+Em um Arch puro já instalado, com usuário comum, sudo, internet e boot funcional:
 
 ```bash
-cd ~/granarch
-git pull --ff-only
-bash scripts/update-desktop.sh
+./install.sh --plan
+./install.sh --verify
+./install.sh --install
 ```
 
-Essa atualização instala fastfetch e aplica o G desenhado, o símbolo usado no
-terminal, o painel Sobre, o ícone/lançador oficial do Zen, o fosco do Files e a
-barra nativa em uso no notebook. Também instala/verifica o OpenCode oficial.
-A atualização também restaura os atalhos atuais do notebook e os aliases fish,
-salvando as versões anteriores em `~/.local/state/gran/shortcut-backups`.
-Monitores, perfil do navegador, contas e favoritos são preservados.
-A seleção antiga `hattux.bar` é migrada para `gran.bar`, preservando a disposição
-dos widgets: laterais de 6 px, topo de 3 px e cantos seguindo o arredondamento
-do Hyprland (4 px no padrão atual).
-Os arquivos substituídos ficam em `~/.local/state/gran/appearance-backups`;
-CSS e `user.js` existentes recebem backups antes das alterações de tema.
-Feche/reabra Zen e Files e saia/entre na sessão para recarregar a barra.
+A instalação substitui configurações de desktop com backup em
+`~/.local/state/gran/backups/`; configurações administrativas têm backup em
+`/var/backups/granarch/`. Overrides do Noctalia são arquivados para não sobrepor o
+perfil solicitado. Pacotes atualizam com `pacman -Syu`, evitando upgrade parcial.
 
-A referência capturada do Zen é **1.24b**, com modo compacto ao iniciar e a
-paleta Nord. Novas instalações usam esse release oficial com SHA-256 verificado;
-`gran app update zen` continua consultando o release oficial mais recente.
-A atualização de aparência repara o Zen já instalado sem fazer downgrade nem
-copiar perfis do notebook. O ícone vem do próprio pacote oficial do navegador,
-e não de uma imagem genérica do tema.
-
-## Comandos
-
-```fish
-gran update              # pacman + mise + programas upstream já gerenciados
-gran doctor              # programas, configuração e sessão
-gran commands            # comandos reais disponíveis
-gran sources             # origem dos componentes
-gran skills list         # skills disponíveis para as IAs
-gran theme sync          # regenerar paleta compartilhada
-gran app sources         # fontes dos aplicativos gerenciados diretamente
-gran app update installed
-gran launch apps         # grade de aplicativos herdada
-gran pkg install         # buscar e instalar pacotes
-gran webapp install      # criar um aplicativo de site
-gran setup keyboard     # assistente de layout do teclado
-```
-
-Configurações: `~/.config/hypr`, `~/.config/gran`, `~/.config/kitty` e
-`~/.config/fish`. Estado do tema: `~/.local/state/gran/current`.
-Fontes e utilitários locais: `$GRAN_PATH`, normalmente `~/.local/share/gran`.
-
-O mise gerencia Node, Codex e OpenCode. Pacman gerencia os componentes do Arch.
-`gran update` não substitui os seus arquivos de desktop por templates upstream.
-Alterações do próprio desktop são mantidas neste projeto.
-
-## Modificar e gerar o pacote
-
-Edite `overlay/`, `skills/`, os manifests e os scripts de aplicação. A captura
-portada fica separada em `snapshot/`. Na máquina de origem, recapture com:
+O modo `--live` é uma alternativa avançada à interface gráfica: exige a ISO
+oficial Arch em UEFI, raiz ext4 **já preparada** em `/mnt` e ESP FAT32 vazia em
+`/mnt/boot`. Não particiona nem formata. Aceita raiz LUKS previamente aberta,
+usando o UUID descoberto no destino. Exige confirmação `INSTALAR`:
 
 ```bash
-python scripts/capture-desktop.py --replace
-bash install.sh --verify
+./install.sh --live /mnt nomeusuario nomedamaquina
 ```
 
-A política de hardware documentada fica em
-[manifests/notebook.json](manifests/notebook.json); revise-a ao alterar os padrões
-da instalação de origem. Para gerar o pacote completo:
+As senhas são digitadas diretamente em `passwd`, sem argumentos ou arquivos.
+O modo terminal usa systemd-boot e initramfs systemd/sd-encrypt; o Calamares usa
+GRUB. Não reaproveite UUIDs, partições ou arquivos de boot da máquina de origem.
+
+## Validar e testar
 
 ```bash
-bash scripts/build-bundle.sh
+./install.sh --verify
+python3 -m unittest discover -s tests -v
 ```
 
-O resultado é `dist/granarch-bootstrap.tar.gz`, com arquivo SHA-256 ao lado.
+Requer Python 3.11+ e PyYAML (`python-yaml` no Arch).
 
-## Validação e limites atuais
+Os testes cobrem aplicação recuperável, proteção contra links que escapam do HOME,
+portabilidade dos caminhos, cor das pastas sem mudar o desenho, rejeição de
+checksum incorreto, recusa de instalação no Fedora e validadores nativos em HOME
+isolado. O verificador também confere sintaxe, manifests e pacotes obrigatórios.
 
-Os testes locais verificam aplicação em diretórios temporários, backups,
-reaplicação, conservação dos atalhos, nomes Gran, fontes, integridade, download
-verificado e preparação de boot sem transplantar identificadores de disco.
-Isso não comprova boot em um Arch novo. O fluxo completo de boot, unlock,
-suspensão, hardware e o visual do Quickshell oficial ainda precisam ser
-validados em VM e depois no notebook. Veja [validação](docs/validation.md).
-
-A API Lua de referência é Hyprland >=0.57 e o shell usa Quickshell >=0.3.2.
-Uma diretiva do loader modificado foi removida; não é necessário esse patch.
-A regra de bateria foi adaptada à escala 0..1 usada pelo UPower do Quickshell
-oficial, mantendo o limite configurado em 25%.
-
-Os widgets de Proton VPN e câmera são preservados, mas seus backends/modelos não
-vêm com a base. O widget `crmne.lyrics` já não tem plugin correspondente na
-origem. Ditado e gravação avançada precisam das suas ferramentas opcionais.
-Titlebars opcionais podem ser instaladas do repositório oficial de plugins
-Hyprland por `gran plugin hyprbars install`, após instalar hyprpm e as
-dependências de compilação. Não há pacote de titlebars da distribuição de origem.
-
-Aplicativos que desenham seus próprios temas ou rodam em sandboxes podem ignorar
-a paleta do sistema e precisam de integração própria. Páginas web, documentos e
-imagens mantêm suas cores. O perfil novo do Zen recebe a paleta antes do primeiro
-uso; perfis existentes recebem os imports de CSS sem copiar logins ou sessões.
-
-## Dados e licenças
-
-Não foram copiados credenciais, contas, perfis do navegador, chaves SSH/GPG,
-histórico de shell, notificações ou clipboard. A localização configurada do
-widget de clima e os padrões do notebook são preferências preservadas.
-
-Backups: `~/.local/state/gran/backups`, `install-backups`, `theme-backups` e
-`/var/backups/gran`. Eles preservam arquivos, não desfazem transações de pacotes.
-
-A origem dos componentes derivados é [Omarchy](https://github.com/omacom/omarchy),
-sob [MIT](licenses/omarchy-MIT.txt). Créditos, autores e licenças dos plugins são
-mantidos. Antes de publicar uma ISO, revisar também licenças de plugins,
-wallpaper, fontes e demais assets. As menções upstream em créditos não são
-dependências de instalação ou atualização.
-
-## Reparar OpenCode instalado pela versão anterior
-
-Se `opencode` informar que o postinstall de `opencode-ai` não rodou, depois de
-publicar e baixar esta versão:
+Após instalar numa VM e entrar em **GranArch** no SDDM:
 
 ```bash
-cd ~/granarch
-git pull --ff-only
-bash scripts/repair-opencode.sh
+gran doctor
+hyprctl configerrors
+noctalia config export full
+nmcli device
+wpctl status
 ```
 
-O reparo usa o binário oficial `aqua:anomalyco/opencode` pelo mise, executa
-`opencode --version` e só depois retira a configuração antiga `npm:opencode-ai`.
-Mantém a instalação anterior para recuperação (`--no-prune`), preserva dados e
-configurações do aplicativo e salva o config mise anterior em
-`~/.local/state/gran/opencode-backups`. Atualiza também o atualizador, o menu de
-instalação e o doctor do Gran para usar/verificar o novo caminho.
+Veja o roteiro em [docs/validation.md](docs/validation.md). Validação de sintaxe
+não comprova boot, comportamento do Calamares, equivalência visual, Wi-Fi,
+suspensão, bateria ou gestos reais.
 
-Novas instalações e `gran update` usam o mesmo mecanismo. O doctor agora testa
-a execução do OpenCode, além de localizar o comando. A instalação npm anterior
-podia deixar apenas o lançador: por padrão o mise não executa scripts de builds
-desses pacotes, conforme a [documentação npm do mise](https://mise.jdx.dev/dev-tools/backends/npm).
+## Estrutura e créditos
 
-O OpenCode já faz parte da instalação normal: a etapa de ferramentas instala
-o release oficial, prepara os shims e executa o comando comum `opencode --version`.
-Se o binário ou a resolução do comando falhar, a instalação interrompe nessa
-etapa. Não é necessário executar um reparo manual após uma instalação nova.
+`payload/` contém somente arquivos selecionados da origem, com `@HOME@` substituído
+no destino. `scripts/` instala e valida; `iso/` configura Calamares e a sessão live;
+`packaging/` contém a receita do Calamares. `AGENTS.md` registra as preferências.
 
-## Aliases e atalhos do notebook
-
-A instalação inclui `gran-aliases.fish` e suas ferramentas eza, fzf, bat, zoxide,
-tmux, neovim, openssh e file. `lt` usa árvore até o segundo nível com detalhes,
-ícones e Git; `lta` inclui também os ocultos. Abra um terminal fish novo após
-a atualização. Os aliases de ferramentas opcionais continuam requerendo seus
-respectivos aplicativos.
-
-| Atalho | Comportamento atual |
-| --- | --- |
-| Ctrl+Super+Alt+T | btop no Kitty, flutuante e centralizado, 875×600 |
-| Super+Enter / Super+Shift+T | Terminal padrão |
-| Super+Shift+O | Abrir ou focar OpenCode |
-| Super+Alt+Enter | Abrir ou focar Codex |
-| Ctrl+Super+Enter | Abrir ou focar TUIOS, quando instalado |
-| Super+D / Super+Shift+F | Files com o wrapper atual |
-| Super+S | Console do agente, iniciando o agente se estiver vazio |
-| Super+Q | Fechar janela; Super+W fica livre para o aplicativo |
-
-Todos os nove arquivos de atalhos pessoais/defaults são exportados em overlay;
-a procedência e os hashes ficam em `manifests/shortcuts.json`. Também são
-incluídos o console, os lançadores TUI, as regras de janela e o tema/configuração
-do btop. `scripts/update-desktop.sh` aplica o conjunto com backup. Essa atualização
-substitui os atalhos do destino pelos atuais deste notebook, conforme solicitado.
+Hyprland, Noctalia, Calamares, KDE Breeze e os aplicativos mantêm suas respectivas
+licenças upstream. O runtime Gran preserva seu arquivo LICENSE; utilitários
+originalmente derivados de Omarchy mantêm a atribuição MIT. O wallpaper e os assets
+capturados são referência pessoal; revisar direitos de redistribuição antes de
+publicar a ISO.

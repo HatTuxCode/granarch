@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# Resolve the real executable before sudo: mise shims use the caller's HOME.
+set -euo pipefail
+export PATH="$HOME/.local/share/mise/shims:$HOME/.local/bin:$HOME/.local/share/gran/bin:$PATH"
+lazy_bin="$(mise which lazydocker)"
+if [[ -r /var/run/docker.sock && -w /var/run/docker.sock ]]; then
+ exec "$lazy_bin"
+fi
+exec sudo -- "$lazy_bin"

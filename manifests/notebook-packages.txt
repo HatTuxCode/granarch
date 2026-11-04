@@ -1,3 +1,0 @@
-# Installed conditionally on the source notebook's ASUS/Intel hardware family.
-extra/asusctl
-extra/thermald

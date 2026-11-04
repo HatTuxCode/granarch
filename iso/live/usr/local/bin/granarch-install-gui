@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# Polkit authenticates only this installer invocation; no broad sudo rule.
+exec pkexec /usr/local/libexec/granarch-calamares "${XDG_RUNTIME_DIR:?}" "${WAYLAND_DISPLAY:?}"

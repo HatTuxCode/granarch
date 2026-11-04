@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -euo pipefail
+[[ $EUID == 0 && $# == 2 && $1 == /run/user/1000 && $2 =~ ^wayland-[0-9]+$ && -d /run/archiso ]] || exit 1
+export XDG_RUNTIME_DIR=$1 WAYLAND_DISPLAY=$2 QT_QPA_PLATFORM=wayland
+exec /usr/bin/calamares
