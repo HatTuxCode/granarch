@@ -22,3 +22,7 @@ na branch archive/before-native-arch-*. Não reintroduzir o Quickshell antigo.
 Verificação: python3 scripts/verify.py e python3 -m unittest discover -s tests -v.
 Mudanças de boot, hardware e aparência precisam também de teste real em VM/Arch;
 validação local no Fedora não prova instalação nem boot.
+
+Calamares: senha mínima de 2 caracteres. Janela deve caber na área útil, com
+escala adaptativa apenas do instalador; preservar fontes e escala do desktop.
+Não reiniciar o instalador durante uma instalação em andamento para aplicar ajustes.

@@ -57,6 +57,13 @@ class InstallerTests(unittest.TestCase):
         self.assertEqual(config['uploadServer']['type'],'none')
         for role in ('SidebarBackground','SidebarText','SidebarTextCurrent','SidebarBackgroundCurrent'):
             self.assertIn(role,config['style'])
+    def test_installer_fits_small_scaled_displays(self):
+        scaling=module('calamares_scale',ROOT/'iso/live/usr/local/libexec/granarch-calamares-scale.py')
+        monitor={'width':1280,'height':800,'scale':1.25,'focused':True,'reserved':[0,29,0,0]}
+        factor=scaling.factor([monitor])
+        self.assertLessEqual(1000*factor,1280/1.25-32)
+        self.assertLessEqual(720*factor,800/1.25-29-32)
+        self.assertEqual(scaling.factor([{'width':2560,'height':1440,'scale':1.25}]),1)
     def test_symlink_cannot_redirect_profile(self):
         with tempfile.TemporaryDirectory() as directory,tempfile.TemporaryDirectory() as outside:
             home=Path(directory);(home/'.config').symlink_to(outside,target_is_directory=True)

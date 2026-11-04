@@ -88,6 +88,9 @@ O build usa o perfil `releng` do archiso instalado, com desktop live Hyprland e
 Noctalia. Na sessão live, abra **Instalar GranArch** pelo launcher (`Super+Space`).
 O usuário live tem login automático apenas na ISO; o destino usa senha.
 
+O Calamares aceita senhas com mínimo de dois caracteres e ajusta somente sua
+própria escala à área útil da tela para manter os botões acessíveis.
+
 O Calamares apresenta idioma, teclado, particionamento, usuário e resumo antes
 de gravar. O fluxo é **online**: baixa pacotes Arch com `pacstrap` e aplica o perfil
 após criar o usuário. É necessária internet também para mise, Zen e TUIOS.

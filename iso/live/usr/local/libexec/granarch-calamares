@@ -2,4 +2,13 @@
 set -euo pipefail
 [[ $EUID == 0 && $# == 2 && $1 == /run/user/1000 && $2 =~ ^wayland-[0-9]+$ && -d /run/archiso ]] || exit 1
 export XDG_RUNTIME_DIR=$1 WAYLAND_DISPLAY=$2 QT_QPA_PLATFORM=wayland
+# Query only display geometry from the live compositor; never change its scale.
+instance=$(find "$XDG_RUNTIME_DIR/hypr" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | head -n 1)
+if [[ -n $instance ]]; then
+ monitors=$(runuser -u live -- env XDG_RUNTIME_DIR="$XDG_RUNTIME_DIR" HYPRLAND_INSTANCE_SIGNATURE="$instance" hyprctl -j monitors 2>/dev/null) || monitors='[]'
+ QT_SCALE_FACTOR=$(printf '%s' "$monitors" | python3 /usr/local/libexec/granarch-calamares-scale.py)
+else
+ QT_SCALE_FACTOR=0.750
+fi
+export QT_SCALE_FACTOR
 exec /usr/bin/calamares
