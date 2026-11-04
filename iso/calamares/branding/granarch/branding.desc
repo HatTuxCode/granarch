@@ -14,7 +14,15 @@ strings:
   knownIssuesUrl: https://archlinux.org/news
   releaseNotesUrl: https://archlinux.org/news
 style:
-  sidebarBackground: '#2e3440'
-  sidebarText: '#d8dee9'
-  sidebarTextSelect: '#2e3440'
-  sidebarTextHighlight: '#8fa89b'
+  SidebarBackground: '#2e3440'
+  SidebarText: '#d8dee9'
+  SidebarTextCurrent: '#2e3440'
+  SidebarBackgroundCurrent: '#8fa89b'
+images:
+  productIcon: logo.svg
+  productLogo: logo.svg
+  productWelcome: logo.svg
+slideshow: show.qml
+slideshowAPI: 2
+uploadServer:
+  type: none

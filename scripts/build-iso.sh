@@ -28,7 +28,7 @@ import sys
 from pathlib import Path
 p=Path(sys.argv[1]);packages=set(p.read_text().splitlines())
 packages.update(line for line in Path(sys.argv[2]).read_text().splitlines() if line and not line.startswith('#'))
-packages.update(['calamares','arch-install-scripts','grub','efibootmgr','btrfs-progs','gptfdisk','parted','python-yaml','rsync','squashfs-tools'])
+packages.update(['calamares','arch-install-scripts','grub','efibootmgr','os-prober','btrfs-progs','gptfdisk','parted','python-yaml','rsync','squashfs-tools'])
 p.write_text('\n'.join(sorted(packages))+'\n')
 PY
 # Custom profile metadata; the releng bootloader templates remain maintained by Arch.

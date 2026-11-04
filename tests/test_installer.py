@@ -47,6 +47,16 @@ class InstallerTests(unittest.TestCase):
             result=subprocess.run(['bash','-c','source "$1"; printf "%s" "${file_permissions[/opt/granarch/payload/home/.local/share/gran/bin/gran-session]}"', 'bash',str(profile)],capture_output=True,text=True,check=True)
             self.assertEqual(result.stdout,'0:0:755')
             self.assertNotIn('/config',permissions.export(root))
+    def test_calamares_branding_has_required_assets(self):
+        import yaml
+        folder=ROOT/'iso/calamares/branding/granarch'
+        config=yaml.safe_load((folder/'branding.desc').read_text())
+        self.assertTrue((folder/config['slideshow']).is_file())
+        for role in ('productIcon','productLogo','productWelcome'):
+            self.assertTrue((folder/config['images'][role]).is_file(),role)
+        self.assertEqual(config['uploadServer']['type'],'none')
+        for role in ('SidebarBackground','SidebarText','SidebarTextCurrent','SidebarBackgroundCurrent'):
+            self.assertIn(role,config['style'])
     def test_symlink_cannot_redirect_profile(self):
         with tempfile.TemporaryDirectory() as directory,tempfile.TemporaryDirectory() as outside:
             home=Path(directory);(home/'.config').symlink_to(outside,target_is_directory=True)
