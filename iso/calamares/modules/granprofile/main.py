@@ -12,11 +12,11 @@ def run():
     stage=target/relative.lstrip('/');stage.parent.mkdir(parents=True,exist_ok=True)
     shutil.copytree('/opt/granarch',stage,dirs_exist_ok=True)
     commands=[
-        ['python3',relative+'/scripts/check-versions.py'],
-        ['python3',relative+'/scripts/configure-system.py',user,'--preserve-locale'],
-        ['chown','-R',user+':'+user,relative],
-        ['runuser','-u',user,'--','env','-u','DBUS_SESSION_BUS_ADDRESS','-u','HYPRLAND_INSTANCE_SIGNATURE',f'HOME=/home/{user}',f'USER={user}','bash',relative+'/scripts/user-install.sh']]
-    for command in commands:
+        ('verificar versões', ['python3',relative+'/scripts/check-versions.py']),
+        ('configurar serviços', ['python3',relative+'/scripts/configure-system.py',user,'--preserve-locale']),
+        ('preparar permissões', ['chown','-R',user+':'+user,relative]),
+        ('instalar perfil e aplicativos', ['runuser','-u',user,'--','env','-u','DBUS_SESSION_BUS_ADDRESS','-u','HYPRLAND_INSTANCE_SIGNATURE',f'HOME=/home/{user}',f'USER={user}','bash',relative+'/scripts/user-install.sh'])]
+    for label,command in commands:
         result=subprocess.run(['arch-chroot',str(target),*command])
-        if result.returncode:return ('Falha ao configurar o desktop','A etapa '+command[0]+' falhou. Consulte o log antes de reiniciar.')
+        if result.returncode:return ('Falha ao configurar o desktop','A etapa '+label+' falhou. Consulte o log antes de reiniciar.')
     return None

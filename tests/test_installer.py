@@ -64,6 +64,13 @@ class InstallerTests(unittest.TestCase):
         self.assertLessEqual(1000*factor,1280/1.25-32)
         self.assertLessEqual(720*factor,800/1.25-29-32)
         self.assertEqual(scaling.factor([{'width':2560,'height':1440,'scale':1.25}]),1)
+    def test_version_checks_accept_actual_upstream_output(self):
+        versions=module('versions',ROOT/'scripts/check-versions.py')
+        self.assertEqual(versions.version_from_output('noctalia','noctalia v5.4.1\n'),(5,4,1))
+        self.assertEqual(versions.version_from_output('Hyprland','Hyprland 0.57.1 built from branch v0.57.1'),(0,57,1))
+        self.assertEqual(versions.version_from_output('noctalia','library 9.8.7\nnoctalia v5.4.0\n'),(5,4,0))
+        self.assertLess(versions.version_from_output('noctalia','noctalia v5.3.0'),versions.MINIMUMS['noctalia'])
+        self.assertIsNone(versions.version_from_output('noctalia','unrelated library 5.4.1'))
     def test_symlink_cannot_redirect_profile(self):
         with tempfile.TemporaryDirectory() as directory,tempfile.TemporaryDirectory() as outside:
             home=Path(directory);(home/'.config').symlink_to(outside,target_is_directory=True)
