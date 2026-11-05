@@ -4,10 +4,10 @@ from pathlib import Path
 import subprocess
 import sys
 if len(sys.argv)>1 and sys.argv[1]=='restore':
-    subprocess.run(['hyprctl','dispatch','dpms','on'],check=True)
+    subprocess.run(['hyprctl','eval','hl.dispatch(hl.dsp.dpms({ action = "enable" }))'],check=True)
 else:
     supplies=Path('/sys/class/power_supply')
     online=any(p.read_text().strip()=='1' for p in supplies.glob('*/online'))
     capacities=[int(p.read_text()) for p in supplies.glob('*/capacity')]
     if capacities and min(capacities)<=25 and not online:
-        subprocess.run(['hyprctl','dispatch','dpms','off'],check=True)
+        subprocess.run(['hyprctl','eval','hl.dispatch(hl.dsp.dpms({ action = "disable" }))'],check=True)

@@ -3,6 +3,7 @@ set -euo pipefail
 id live >/dev/null 2>&1 || useradd -m -u 1000 -G wheel -s /bin/fish live
 passwd -d live
 runuser -u live -- env HOME=/home/live python3 /opt/granarch/scripts/apply-home.py
+runuser -u live -- env HOME=/home/live python3 /opt/granarch/scripts/migrate-browser-launchers.py
 # Live ISO uses only the compositor/Noctalia; network installs happen in Calamares.
 install -d /usr/share/wayland-sessions
 printf '[Desktop Entry]\nName=GranArch Live\nExec=/home/live/.local/share/gran/bin/gran-session\nType=Application\nDesktopNames=Hyprland\n' > /usr/share/wayland-sessions/granarch-live.desktop

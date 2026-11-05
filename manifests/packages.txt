@@ -100,3 +100,10 @@ gtk3
 dbus-glib
 libxt
 python-yaml
+evince
+gnome-disk-utility
+ark
+7zip
+unrar
+vulkan-swrast
+libxkbcommon-x11

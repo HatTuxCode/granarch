@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Arch build host only; pass a locally built/reviewed Calamares package.
 set -euo pipefail
-[[ $EUID == 0 && $# == 1 ]] || { echo 'Uso: sudo scripts/build-iso.sh /caminho/calamares-VERSAO-x86_64.pkg.tar.zst' >&2; exit 2; }
+[[ $EUID == 0 && $# -ge 3 ]] || { echo 'Uso: sudo scripts/build-iso.sh /caminho/calamares-VERSAO-x86_64.pkg.tar.zst zen-browser-bin-*.pkg.tar.zst disktree-bin-*.pkg.tar.zst' >&2; exit 2; }
 source /etc/os-release
 [[ $ID == arch ]] || { echo 'Gere a ISO em Arch Linux puro.' >&2; exit 1; }
 for command in mkarchiso repo-add bsdtar; do command -v "$command" >/dev/null; done
@@ -12,23 +12,51 @@ project=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 python3 "$project/scripts/verify.py"
 work=$(mktemp -d /var/tmp/granarch-iso.XXXXXXXX)
 profile="$work/profile";cp -a /usr/share/archiso/configs/releng "$profile"
-repository="$work/repository";mkdir -p "$repository";cp "$package" "$repository/"
-repo-add "$repository/granarch-build.db.tar.gz" "$repository/$(basename "$package")"
+cp "$project/iso/pacman.conf" "$profile/pacman.conf"
+repository="$work/repository";mkdir -p "$repository"
+for archive in "$@"; do cp -- "$archive" "$repository/"; done
+repo-add "$repository/granarch-build.db.tar.gz" "$repository/"*.pkg.tar.zst
 printf '\n[granarch-build]\nSigLevel = Optional TrustAll\nServer = file://%s\n' "$repository" >> "$profile/pacman.conf"
 # The local build repository exists only on the build host and live package transaction.
 root="$profile/airootfs"
 mkdir -p "$root/opt/granarch" "$root/etc/calamares" "$root/usr/local/bin" "$root/usr/local/libexec" "$root/etc/systemd/system/multi-user.target.wants" "$root/etc/sddm.conf.d" "$root/etc/skel/.config/hypr"
 tar -C "$project" --exclude=.git --exclude=.agents --exclude=.codex --exclude=.aws --exclude=dist --exclude=__pycache__ --exclude='*.pyc' -cf - . | tar -C "$root/opt/granarch" -xf -
-cp /etc/pacman.conf "$root/opt/granarch/iso/pacman-target.conf"
-cp /etc/pacman.conf "$root/etc/pacman.conf"
+cp "$project/iso/pacman.conf" "$root/opt/granarch/iso/pacman-target.conf"
+cp "$project/iso/pacman.conf" "$root/etc/pacman.conf"
 cp -a "$project/iso/calamares/." "$root/etc/calamares/"
 cp -a "$project/iso/live/." "$root/"
+# The live session needs the same palette integration as an installed desktop.
+python3 - "$project" "$root" <<'PYLIVE'
+from pathlib import Path
+import shutil,sys,json,hashlib
+project,root=map(Path,sys.argv[1:])
+for source in (project/'payload/system').rglob('*'):
+    if source.is_file():
+        target=root/source.relative_to(project/'payload/system')
+        target.parent.mkdir(parents=True,exist_ok=True)
+        try:target.write_text(source.read_text().replace('@HOME@','/home/live'))
+        except UnicodeError:shutil.copy2(source,target)
+        target.chmod(source.stat().st_mode&0o777)
+(root/'etc/chromium/policies/managed').mkdir(parents=True,exist_ok=True)
+PYLIVE
+for unit in gran-browser-theme.path gran-browser-theme.service; do
+ ln -sf "/etc/systemd/system/$unit" "$root/etc/systemd/system/multi-user.target.wants/$unit"
+done
+# Keep the reviewed native desktop packages available for offline installation.
+mkdir -p "$root/opt/granarch/iso/packages"
+for archive in "${@:2}"; do cp -- "$archive" "$root/opt/granarch/iso/packages/"; done
+python3 - "$root/opt/granarch/iso/packages" <<'PYLOCK'
+from pathlib import Path
+import hashlib,json,sys
+folder=Path(sys.argv[1]);records={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in folder.glob('*.pkg.tar.zst')}
+(folder/'lock.json').write_text(json.dumps(records,indent=2)+'\n')
+PYLOCK
 python3 - "$profile/packages.x86_64" "$project/manifests/packages.txt" <<'PY'
 import sys
 from pathlib import Path
 p=Path(sys.argv[1]);packages=set(p.read_text().splitlines())
 packages.update(line for line in Path(sys.argv[2]).read_text().splitlines() if line and not line.startswith('#'))
-packages.update(['calamares','arch-install-scripts','grub','efibootmgr','os-prober','btrfs-progs','gptfdisk','parted','python-yaml','rsync','squashfs-tools'])
+packages.update(['zen-browser-bin','disktree-bin','calamares','arch-install-scripts','grub','efibootmgr','os-prober','btrfs-progs','gptfdisk','parted','python-yaml','rsync','squashfs-tools'])
 p.write_text('\n'.join(sorted(packages))+'\n')
 PY
 # Custom profile metadata; the releng bootloader templates remain maintained by Arch.

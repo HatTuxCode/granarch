@@ -17,3 +17,16 @@
 
 Ainda não executado: compilação do Calamares no Arch, geração/boot da ISO e
 instalação completa. Os testes locais não removem essa pendência.
+
+## Ciclo real de teste em 04/11/2026
+
+A ISO iniciou na VM BIOS/QEMU com vídeo Virtio. Foram identificados e corrigidos
+na sessão live: espera circular na inicialização, permissões de execução do
+payload e apresentação obrigatória do Calamares. Hyprland, Noctalia e o
+assistente abriram. Instalação online instalou pacotes e criou o usuário.
+
+A etapa de desktop expôs falhas que os testes de sintaxe não cobriam: leitura de
+`noctalia v5.4.1`, criação do cache do usuário como root e validação do Hyprland
+sem XDG_RUNTIME_DIR em chroot. O staging agora fica em /opt; a validação usa um
+runtime temporário isolado. Correções recentes permanecem locais até o fim do
+teste de instalação e boot. A VM não substitui testes físicos de Fn e energia.

@@ -28,5 +28,6 @@ printf 'Instalação Arch: %s pacotes, Hyprland Lua, Noctalia v5 e perfil pessoa
 sudo pacman -Syu --needed "${packages[@]}"
 python3 "$project/scripts/verify.py"
 python3 "$project/scripts/check-versions.py"
+sudo python3 "$project/scripts/install-desktop-apps.py" "$(id -un)"
 sudo python3 "$project/scripts/configure-system.py" "$(id -un)"
 exec bash "$project/scripts/user-install.sh"

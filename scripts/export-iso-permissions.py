@@ -5,7 +5,7 @@ from pathlib import Path
 
 def export(root):
     lines=[]
-    for path in sorted((root/'opt/granarch').rglob('*')):
+    for path in sorted(root.rglob('*')):
         if path.is_file() and not path.is_symlink() and path.stat().st_mode & 0o111:
             name='/'+path.relative_to(root).as_posix()
             lines.append('file_permissions['+shlex.quote(name)+']='+'"0:0:755"')

@@ -5,7 +5,7 @@ case "$name" in
  chromium) exec gran-pkg "$action" chromium ;;
  zen|installed)
   case "$action" in
-   install|repair|update) exec python3 "$HOME/.local/share/gran/lib/upstream-apps.py" zen ;;
+   install|repair|update) exec pkexec /usr/bin/python3 /opt/granarch-installer/scripts/install-desktop-apps.py "$(id -un)" --only zen-browser-bin ;;
    *) echo 'Uso: gran app install|repair|update zen' >&2; exit 2 ;;
   esac ;;
  *)

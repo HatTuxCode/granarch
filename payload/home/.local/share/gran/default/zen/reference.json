@@ -1,9 +1,0 @@
-{
-  "version": "1.24b",
-  "source": "https://github.com/zen-browser/desktop",
-  "preferences": {
-    "browser.theme.toolbar-theme": 0,
-    "zen.view.compact.enable-at-startup": true,
-    "toolkit.legacyUserProfileCustomizations.stylesheets": true
-  }
-}

@@ -1,5 +1,6 @@
 [Unit]
 Description=Sync GranHat browser appearance policies
+ConditionPathExists=@HOME@/.local/state/gran/chromium-color.json
 [Service]
 Type=oneshot
 TimeoutStartSec=10
@@ -9,3 +10,6 @@ ProtectSystem=strict
 ReadWritePaths=/etc/chromium/policies/managed
 ProtectHome=read-only
 PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

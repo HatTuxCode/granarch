@@ -1,0 +1,10 @@
+[General]
+ShowFullPath=true
+[KFileDialog Settings]
+Places Icons Auto-resize=false
+Places Icons Static Size=22
+Show hidden files=false
+[MainWindow]
+MenuBar=Disabled
+[UiSettings]
+ColorScheme=Gran

@@ -88,7 +88,7 @@ selection, :selected {{ background-color: {accent}; color: {bg}; }}
         if path.exists(): settings.read(path)
         if not settings.has_section('Settings'): settings.add_section('Settings')
         settings['Settings'].update({'gtk-theme-name': 'Adwaita' if light else 'Adwaita-dark',
-            'gtk-icon-theme-name': 'breeze', 'gtk-cursor-theme-name': 'breeze_cursors',
+            'gtk-icon-theme-name': 'GranBreezeContrast', 'gtk-cursor-theme-name': 'breeze_cursors',
             'gtk-application-prefer-dark-theme': 'false' if light else 'true'})
         output = io.StringIO();settings.write(output,space_around_delimiters=False)
         write(relative,output.getvalue())
@@ -108,10 +108,7 @@ selection, :selected {{ background-color: {accent}; color: {bg}; }}
         env['HOME'] = str(home)
         env['GRAN_PATH'] = str(home / '.local/share/gran')
         env['PATH'] = str(home / '.local/bin') + ':' + str(home / '.local/share/gran/bin') + ':' + env.get('PATH', '')
-        profiles = [ini for ini in (home / '.config/zen/profiles.ini', home / '.zen/profiles.ini') if ini.exists()]
-        for ini in profiles or [home / '.config/zen/profiles.ini']:
-            env['GRAN_ZEN_INI'] = str(ini)
-            subprocess.run([sys.executable, str(script)], env=env, check=True, capture_output=True)
+        subprocess.run([sys.executable, str(script)], env=env, check=True, capture_output=True)
     return changed
 
 

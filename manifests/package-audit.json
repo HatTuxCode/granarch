@@ -119,7 +119,14 @@
     "xorg-xwayland": true,
     "yaml-cpp": true,
     "zip": true,
-    "zoxide": true
+    "zoxide": true,
+    "evince": true,
+    "gnome-disk-utility": true,
+    "ark": true,
+    "7zip": true,
+    "unrar": true,
+    "vulkan-swrast": true,
+    "libxkbcommon-x11": true
   },
   "notes": "iptables-nft removido: indispon\u00edvel no mirror atual; firewalld e libvirt resolvem as depend\u00eancias de firewall nativas."
 }

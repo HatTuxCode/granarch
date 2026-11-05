@@ -6,7 +6,8 @@
   },
   "zen": {
     "upstream": "https://github.com/zen-browser/desktop",
-    "delivery": "Official release, SHA-256 verified"
+    "delivery": "zen-browser-bin: reviewed AUR recipe, official release with verified SHA-256; pacman-managed",
+    "packaging": "https://aur.archlinux.org/packages/zen-browser-bin"
   },
   "dolphin": {
     "upstream": "https://invent.kde.org/system/dolphin",
@@ -55,5 +56,9 @@
     "delivery": "pacman: breeze-icons + breeze",
     "dolphin": "KDE Breeze stock folders",
     "cursor": "breeze_cursors"
+  },
+  "disktree": {
+    "upstream": "https://github.com/tobi/disktree",
+    "delivery": "disktree-bin: reviewed AUR recipe and verified upstream asset"
   }
 }

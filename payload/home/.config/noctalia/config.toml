@@ -671,7 +671,7 @@ sync_color_scheme = true
 wallpaper_scheme = "soft"
 
     [theme.templates]
-    builtin_ids = [ "kitty", "btop", "qt", "hyprland" ]
+    builtin_ids = [ "kitty", "btop", "hyprland" ]
     community_ids = []
     enable_builtin_templates = true
     enable_community_templates = true

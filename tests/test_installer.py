@@ -4,7 +4,7 @@ ROOT=Path(__file__).resolve().parents[1]
 def module(name,path):
     spec=importlib.util.spec_from_file_location(name,path);result=importlib.util.module_from_spec(spec);spec.loader.exec_module(result);return result
 apply=module('apply',ROOT/'scripts/apply-home.py')
-folders=module('folders',ROOT/'payload/home/.local/share/gran/lib/breeze_folders.py')
+folders=module('folders',ROOT/'payload/home/.local/share/gran/lib/breeze_icons.py')
 apps=module('apps',ROOT/'payload/home/.local/share/gran/lib/upstream-apps.py')
 class InstallerTests(unittest.TestCase):
     def test_existing_files_recoverable_and_overrides_archived(self):
@@ -71,20 +71,69 @@ class InstallerTests(unittest.TestCase):
         self.assertEqual(versions.version_from_output('noctalia','library 9.8.7\nnoctalia v5.4.0\n'),(5,4,0))
         self.assertLess(versions.version_from_output('noctalia','noctalia v5.3.0'),versions.MINIMUMS['noctalia'])
         self.assertIsNone(versions.version_from_output('noctalia','unrelated library 5.4.1'))
+    def test_calamares_staging_does_not_create_root_owned_user_cache(self):
+        from unittest.mock import patch
+        import types
+        with tempfile.TemporaryDirectory() as directory:
+            target=Path(directory)
+            storage=types.SimpleNamespace(value=lambda key: str(target) if key=='rootMountPoint' else 'tester')
+            with patch.dict(sys.modules,{'libcalamares':types.SimpleNamespace(globalstorage=storage)}):
+                profile=module('granprofile',ROOT/'iso/calamares/modules/granprofile/main.py')
+            with patch.object(profile.shutil,'copytree') as copy,patch.object(profile.subprocess,'run',return_value=types.SimpleNamespace(returncode=0)):
+                self.assertIsNone(profile.run())
+            self.assertEqual(copy.call_args.args[1],target/'opt/granarch-installer')
+            self.assertFalse((target/'home/tester/.cache').exists())
+    def test_target_pacman_config_does_not_inherit_container_exclusions(self):
+        config=(ROOT/'iso/pacman.conf').read_text()
+        self.assertNotIn('NoExtract',config)
+        self.assertNotIn('NoUpgrade',config)
+        self.assertIn('SigLevel = Required DatabaseOptional',config)
+        self.assertIn('[core]',config)
+        self.assertIn('[extra]',config)
+        builder=(ROOT/'scripts/build-iso.sh').read_text()
+        self.assertNotIn('cp /etc/pacman.conf',builder)
+        self.assertIn('"$project/iso/pacman.conf"',builder)
+    def test_palette_updates_share_one_source_without_browser_profile_access(self):
+        import shutil,tomllib
+        if not Path('/usr/share/icons/breeze').is_dir():self.skipTest('Breeze unavailable')
+        with tempfile.TemporaryDirectory() as directory:
+            home=Path(directory);apply.apply(home)
+            env=os.environ.copy();env['HOME']=str(home);env['GRAN_PATH']=str(home/'.local/share/gran')
+            env.pop('DBUS_SESSION_BUS_ADDRESS',None)
+            env['PATH']=str(home/'.local/share/gran/bin')+':'+env['PATH']
+            result=subprocess.run(['python3',str(home/'.local/share/gran/bin/gran-theme-sync'),'--quiet'],env=env,capture_output=True,text=True)
+            self.assertEqual(result.returncode,0,result.stderr)
+            policy=json.loads((home/'.local/state/gran/chromium-color.json').read_text())
+            self.assertEqual(policy['BrowserColorScheme'],'device')
+            self.assertIn(policy['BrowserThemeColor'],(home/'.local/state/gran/zen-browser.css').read_text())
+            self.assertEqual(tomllib.loads((home/'.local/state/omarchy/current/theme/colors.toml').read_text())['background'],policy['BrowserThemeColor'])
+            self.assertIn('icon_theme=GranBreezeContrast',(home/'.config/qt6ct/qt6ct.conf').read_text())
+            self.assertNotIn('Profile',(home/'.local/state/gran/zen-browser.css').read_text())
+    def test_stock_folders_inherited_and_toolbar_contrast_generated(self):
+        import configparser
+        with tempfile.TemporaryDirectory() as directory:
+            home=Path(directory);source=home/'source'
+            folder=source/'places/64';folder.mkdir(parents=True)
+            stock='<svg xmlns="http://www.w3.org/2000/svg"><path fill="#4183d7"/></svg>'
+            (folder/'folder.svg').write_text(stock)
+            for name in ('22','22@2x'):
+                actions=source/'actions'/name;actions.mkdir(parents=True)
+                (actions/'go-previous.svg').write_text('<svg xmlns="http://www.w3.org/2000/svg"><path style="fill:currentColor;stroke:none" d="M 1 2"/></svg>')
+            folders.build(home,source,foreground='#d8dee9')
+            theme=home/'.local/share/icons'/folders.THEME_NAME
+            self.assertFalse((theme/'places').exists())
+            self.assertEqual((folder/'folder.svg').read_text(),stock)
+            action=(theme/'actions/22/go-previous.svg').read_text()
+            self.assertIn('fill:#d8dee9',action);self.assertIn('stroke:none',action);self.assertIn('M 1 2',action)
+            config=configparser.ConfigParser();config.read(theme/'index.theme')
+            self.assertEqual(config['Icon Theme']['inherits'],'breeze,hicolor')
+            self.assertEqual(config['actions/22@2x']['size'],'22')
+            self.assertEqual(config['actions/22@2x']['scale'],'2')
     def test_symlink_cannot_redirect_profile(self):
         with tempfile.TemporaryDirectory() as directory,tempfile.TemporaryDirectory() as outside:
             home=Path(directory);(home/'.config').symlink_to(outside,target_is_directory=True)
             with self.assertRaises(ValueError):apply.apply(home)
             self.assertEqual(list(Path(outside).iterdir()),[])
-    def test_breeze_geometry_preserved_and_accent_replaced(self):
-        with tempfile.TemporaryDirectory() as directory:
-            home=Path(directory);source=home/'source';folder=source/'places/64';folder.mkdir(parents=True)
-            svg='<svg xmlns="http://www.w3.org/2000/svg"><path class="ColorScheme-Accent" style="fill:currentColor;opacity:0.6" d="M 4 6 L 4 11 z"/></svg>'
-            (folder/'folder.svg').write_text(svg)
-            self.assertEqual(folders.build(home,source),'GranBreezeNord')
-            result=(home/'.local/share/icons/GranBreezeNord/places/64/folder.svg').read_text()
-            self.assertIn('M 4 6 L 4 11 z',result);self.assertIn('fill:#8fa89b',result);self.assertIn('opacity:0.6',result)
-            self.assertIn('Inherits=breeze,hicolor',(home/'.local/share/icons/GranBreezeNord/index.theme').read_text())
     def test_checksum_failure_refuses_installation(self):
         from unittest.mock import patch
         import io
@@ -102,7 +151,7 @@ class InstallerTests(unittest.TestCase):
         if not shutil.which('Hyprland') or not shutil.which('noctalia'):self.skipTest('Native validators unavailable')
         with tempfile.TemporaryDirectory() as directory:
             home=Path(directory);apply.apply(home);env=os.environ.copy();env['HOME']=str(home)
-            for command in [['noctalia','config','validate',str(home/'.config/noctalia/config.toml')],['Hyprland','--verify-config','--config',str(home/'.config/hypr/hyprland.lua')]]:
-                result=subprocess.run(command,env=env,capture_output=True,text=True,timeout=30)
-                self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+            env.pop('XDG_RUNTIME_DIR',None)
+            result=subprocess.run(['python3',str(ROOT/'scripts/validate-profile.py')],env=env,capture_output=True,text=True,timeout=30)
+            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
 if __name__=='__main__':unittest.main()

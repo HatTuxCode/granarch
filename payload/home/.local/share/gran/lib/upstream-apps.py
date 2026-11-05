@@ -19,6 +19,7 @@ def download(asset, target):
 
 
 def install(name,home):
+    if name!='tuios':raise ValueError('Aplicativo portátil não suportado: '+name)
     data=json.loads((home/'.local/share/gran/default/upstream-lock.json').read_text());asset=data[name]
     apps=home/'.local/share/gran/apps';apps.mkdir(parents=True,exist_ok=True)
     with tempfile.TemporaryDirectory(dir=apps) as temp:
@@ -31,30 +32,20 @@ def install(name,home):
         if destination.exists():
             backup=home/'.local/state/gran/backups'/datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S.%fZ')/name
             backup.parent.mkdir(parents=True,exist_ok=True);shutil.move(destination,backup)
-        shutil.move(binary.parent if name=='zen' else extracted,destination)
-        binary=destination/('zen' if name=='zen' else binary.relative_to(extracted))
+        shutil.move(extracted,destination)
+        binary=destination/binary.relative_to(extracted)
         binary.chmod(0o755)
     localbin=home/'.local/bin';localbin.mkdir(parents=True,exist_ok=True)
-    command='zen-browser' if name=='zen' else name
+    command=name
     launcher=localbin/command
     if launcher.exists() or launcher.is_symlink():
         backup=home/'.local/state/gran/backups'/datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S.%fZ')/command
         backup.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(launcher,backup,follow_symlinks=True)
         launcher.unlink()
     launcher.symlink_to(binary)
-    if name=='zen':
-        applications=home/'.local/share/applications';applications.mkdir(parents=True,exist_ok=True)
-        icon=next(destination.rglob('default128.png'),None)
-        (applications/'zen-browser.desktop').write_text('[Desktop Entry]\nType=Application\nName=Zen\nExec=zen-browser %u\nIcon='+str(icon or 'web-browser')+'\nCategories=Network;WebBrowser;\nMimeType=text/html;x-scheme-handler/http;x-scheme-handler/https;\n')
-        for mime in ('text/html','application/xhtml+xml','x-scheme-handler/http','x-scheme-handler/https'):
-            subprocess.run(['xdg-mime','default','zen-browser.desktop',mime],check=True)
-        # New profile only; existing profiles and their authentication remain intact.
-        profiles=home/'.zen/profiles.ini'
-        if not profiles.exists():
-            (home/'.zen/gran.default').mkdir(parents=True,exist_ok=True)
-            profiles.write_text('[Profile0]\nName=Gran\nIsRelative=1\nPath=gran.default\nDefault=1\n\n[General]\nStartWithLastProfile=1\n')
-        subprocess.run(['gran-theme-sync','--quiet'],check=True)
     print(name,asset['version'],'instalado e verificado')
 if __name__=='__main__':
     if os.geteuid()==0: raise SystemExit('Execute como usuário comum')
-    for name in sys.argv[1:] or ['zen','tuios']: install(name,Path.home())
+    for name in sys.argv[1:] or ['tuios']:
+        if name=='zen':raise SystemExit('Zen é gerenciado como pacote zen-browser-bin pelo instalador.')
+        install(name,Path.home())

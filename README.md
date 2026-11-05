@@ -27,13 +27,13 @@ ser testada numa VM UEFI. Não há ISO publicada nem boot comprovado.
   Dimensões, margens, opacidade e cantos preservados; monitores sem barrinhas.
 - Paleta Nord compartilhada entre Noctalia, GTK, Qt/Dolphin, Kitty, btop, Zen e
   Chromium; modo noturno sempre ativo em 4500 K.
-- Desenho original das pastas **KDE Breeze**, com tom verde-cinza **#8fa89b**.
-  O tema local `GranBreezeNord` altera apenas a cor de acento dos SVGs de pastas;
-  demais ícones são herdados do Breeze. Cursor Breeze. **Sem Yaru**.
+- Desenho original das pastas **KDE Breeze**, com suas cores originais.
+  O tema local `GranBreezeContrast` ajusta os ícones da barra e dos menus;
+  as pastas são herdadas diretamente do Breeze, sem recoloração. Cursor Breeze. **Sem Yaru**.
 - Janelas com opacidade 90%/60%, blur, raio 4, bordas 2, gaps 3/6 e regras atuais.
   Diálogos do virt-manager centralizados em 900×600; consoles seguem o layout.
 - Todos os atalhos do `hyprland.lua` atual, incluindo Codex, OpenCode, TUIOS,
-  GranControl, terminal, Dolphin, Docker, screenshots e clipboard adaptado.
+  terminal, Dolphin, Docker, screenshots e clipboard adaptado. GranControl não é incluído.
 - Dwindle e scrolling; workspace vazio extra e indicadores de bolinhas.
 - Touchpad com **arraste/seleção com três dedos** (`drag_3fg=1`), toque para clicar
   e rolagem natural. Teclas Fn de áudio, microfone, tela, luz do teclado e touchpad.
@@ -44,7 +44,9 @@ ser testada numa VM UEFI. Não há ISO publicada nem boot comprovado.
 - Kitty, fish, Dolphin, Chromium, Zen, imv, btop, fastfetch, Neovim, tmux,
   ferramentas de terminal, Docker/lazydocker e virtualização QEMU/libvirt.
   Codex/OpenCode/lazydocker/Starship via **mise aqua**, sem npm postinstall.
-  Zen e TUIOS: releases oficiais com SHA-256 fixado no manifesto.
+  Zen e DiskTree como pacotes nativos das receitas AUR revisadas, com SHA-256
+  verificado. TUIOS usa release oficial verificado. Inclui Evince, Discos do
+  GNOME e Ark com ações de extração no Dolphin.
 - SDDM com senha e GNOME Keyring; Docker sem adicionar usuário ao grupo docker.
 
 A lista de pacotes do Fedora está em `manifests/source-fedora-packages.txt` para
@@ -76,7 +78,8 @@ sudo pacman -Syu --needed base-devel git archiso cmake ninja
 cd packaging/calamares
 makepkg -s
 cd ../..
-sudo scripts/build-iso.sh packaging/calamares/calamares-3.4.2-1-x86_64.pkg.tar.zst
+sudo python3 scripts/install-desktop-apps.py "$USER" --build-only --output /tmp/granarch-desktop-pkgs
+sudo scripts/build-iso.sh packaging/calamares/calamares-3.4.2-1-x86_64.pkg.tar.zst /tmp/granarch-desktop-pkgs/*.pkg.tar.zst
 ```
 
 A receita compila o Calamares upstream 3.4.2 com checksum fixo. O pacote é colocado
@@ -93,7 +96,7 @@ própria escala à área útil da tela para manter os botões acessíveis.
 
 O Calamares apresenta idioma, teclado, particionamento, usuário e resumo antes
 de gravar. O fluxo é **online**: baixa pacotes Arch com `pacstrap` e aplica o perfil
-após criar o usuário. É necessária internet também para mise, Zen e TUIOS.
+após criar o usuário. É necessária internet também para mise e TUIOS. Os pacotes Zen/DiskTree são incluídos na ISO para o destino.
 Não há particionamento silencioso por scripts. Criptografia e boot pelo Calamares
 precisam de teste específico em VM antes de serem considerados suportados.
 
@@ -135,7 +138,7 @@ python3 -m unittest discover -s tests -v
 Requer Python 3.11+ e PyYAML (`python-yaml` no Arch).
 
 Os testes cobrem aplicação recuperável, proteção contra links que escapam do HOME,
-portabilidade dos caminhos, cor das pastas sem mudar o desenho, rejeição de
+portabilidade dos caminhos, preservação das pastas e contraste das ações, rejeição de
 checksum incorreto, recusa de instalação no Fedora e validadores nativos em HOME
 isolado. O verificador também confere sintaxe, manifests e pacotes obrigatórios.
 
@@ -164,3 +167,37 @@ licenças upstream. O runtime Gran preserva seu arquivo LICENSE; utilitários
 originalmente derivados de Omarchy mantêm a atribuição MIT. O wallpaper e os assets
 capturados são referência pessoal; revisar direitos de redistribuição antes de
 publicar a ISO.
+
+## Cores dos aplicativos e atualização local da VM
+
+Chromium usa o pacote Arch, flags Wayland/libsecret e políticas de cor com o
+mesmo formato usado pelo Omarchy. O serviço Gran prepara o diretório de políticas
+e aplica a paleta também no início do sistema. Zen usa `zen-browser-bin`, com
+receita AUR revisada e checksum do release oficial. Um AutoConfig local carrega
+CSS gerado pelo Noctalia para todos os perfis e acompanha alterações da paleta;
+logins, históricos e dados dos perfis não são copiados nem removidos.
+
+A paleta Qt e o tema de ícones são gerados pelo Gran; o template Qt paralelo do
+Noctalia fica desativado para evitar sobrescrever os ajustes. As pastas mantêm
+os SVGs Breeze, com suas cores originais. Ark fornece as ações de extração.
+DiskTree recebe a mesma paleta por um arquivo de compatibilidade GPUI; esse
+arquivo não instala nem depende do runtime Omarchy.
+
+Para atualizar a VM **como usuário comum**, após copiar/extrair o pacote local:
+
+```bash
+bash scripts/update-installed.sh
+```
+
+Feche os navegadores e o Dolphin antes da atualização; reabra após concluir.
+O script compila as receitas AUR sem root e usa pacman para instalar os pacotes.
+A migração arquiva somente o antigo lançador portátil gerado pelo GranArch e
+preserva perfis. O antigo atalho gerenciado do GranControl é removido com backup.
+Veja [o teste visual](docs/desktop-test.md). Não publicar antes da validação.
+
+Referências: [navegadores Omarchy](https://github.com/omacom/omarchy/blob/quattro/bin/omarchy-install-browser),
+[políticas de cor](https://github.com/omacom/omarchy/blob/quattro/bin/omarchy-theme-set-browser),
+[AutoConfig Mozilla](https://support.mozilla.org/en-US/kb/customizing-firefox-using-autoconfig).
+
+Preferência final: pastas Breeze sem recoloração. GranBreezeContrast ajusta
+apenas os ícones de ações/barra; o login SDDM usa o tema gran da origem.

@@ -48,13 +48,13 @@ arch-chroot /mnt bootctl --esp-path=/boot install
 mkdir -p /mnt/boot/loader/entries
 printf 'default granarch.conf\ntimeout 3\neditor no\n' > /mnt/boot/loader/loader.conf
 printf 'title Arch Linux — GranArch\nlinux /vmlinuz-linux\ninitrd /initramfs-linux.img\noptions %s\n' "$root_options" > /mnt/boot/loader/entries/granarch.conf
-stage="/home/$user/.cache/granarch-installer"
+stage=/opt/granarch-installer
 mkdir -p "/mnt$stage"
 # Exclude Git metadata and environment-provided agent mounts.
 tar -C "$project" --exclude=.git --exclude=.agents --exclude=.codex --exclude=.aws --exclude=dist -cf - . | tar -C "/mnt$stage" -xf -
 arch-chroot /mnt python3 "$stage/scripts/check-versions.py"
+arch-chroot /mnt python3 "$stage/scripts/install-desktop-apps.py" "$user"
 arch-chroot /mnt python3 "$stage/scripts/configure-system.py" "$user"
 arch-chroot /mnt mkinitcpio -P
-arch-chroot /mnt chown -R "$user:$user" "$stage"
 arch-chroot /mnt runuser -u "$user" -- env -u DBUS_SESSION_BUS_ADDRESS -u HYPRLAND_INSTANCE_SIGNATURE HOME="/home/$user" USER="$user" bash "$stage/scripts/user-install.sh"
 printf 'Concluído. Desmonte com umount -R /mnt e reinicie. Selecione GranArch no SDDM.\n'

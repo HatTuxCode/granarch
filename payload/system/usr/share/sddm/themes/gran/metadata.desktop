@@ -1,0 +1,7 @@
+[SddmGreeterTheme]
+Name=GranHat
+Description=GranHat login with explicit user and session selection
+Author=GranHat
+Type=sddm-theme
+Version=2.0
+QtVersion=6

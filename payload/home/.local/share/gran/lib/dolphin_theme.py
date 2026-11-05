@@ -50,15 +50,24 @@ def sync_dolphin(home, palette):
                          'TerminalService': 'kitty.desktop', 'BrowserApplication': 'zen-browser.desktop'}
     # Explicit scheme ID is needed by KDE applications outside Plasma.
     groups['UiSettings'] = {'ColorScheme': 'Gran'}
-    from breeze_folders import build
-    icon_theme = build(home)
+    from breeze_icons import build
+    icon_theme = build(home,foreground=fg)
     groups['Icons'] = {'Theme': icon_theme}
-    update('.config/qt6ct/qt6ct.conf', {'Appearance': {'icon_theme': icon_theme}})
+    update('.config/qt6ct/qt6ct.conf', {'Appearance': {'icon_theme': icon_theme,
+        'style': 'Fusion', 'custom_palette': 'true',
+        'color_scheme_path': str(home/'.config/qt6ct/colors/noctalia.conf')}})
+    roles=[fg,raised,raised,raised,dark,muted,fg,fg,fg,bg,bg,dark,accent,bg,
+           accent,color('magenta'),raised,bg,raised,fg,muted,accent]
+    colors=', '.join(roles)
+    write('.config/qt6ct/colors/noctalia.conf', '[ColorScheme]\n'+''.join(
+        name+'_colors='+colors+'\n' for name in ('active','disabled','inactive')))
+
     groups['KDE'] = {'widgetStyle': 'Fusion'}
     groups['ColorEffects:Inactive'] = {'Enable': 'false'}
     update('.config/kdeglobals', groups)
     update('.local/share/color-schemes/Gran.colors', groups)
     update('.config/dolphinrc', {'UiSettings': {'ColorScheme': 'Gran'},
+        'MainWindow': {'MenuBar': 'Disabled'},
         'General': {'ShowFullPath': 'true'}, 'KFileDialog Settings': {'Show hidden files': 'false'}})
     # QSS also covers the Qt widgets that do not read KDE color schemes.
     # Explicit RGB prevents a translucent or low-contrast application palette

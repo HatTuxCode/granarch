@@ -1,0 +1,12 @@
+{
+  "zen-browser-bin": {
+    "version": "1.24b-1",
+    "source": "https://aur.archlinux.org/packages/zen-browser-bin",
+    "dependencies": ["gtk3", "libxt", "mime-types", "dbus-glib", "nss", "ttf-liberation", "systemd", "ffmpeg"]
+  },
+  "disktree-bin": {
+    "version": "0.11.0-1",
+    "source": "https://aur.archlinux.org/packages/disktree-bin",
+    "dependencies": ["gcc-libs", "wayland", "libxkbcommon", "libxkbcommon-x11", "libxcb", "libglvnd"]
+  }
+}

@@ -24,4 +24,8 @@ runuser -u builder -- env MAKEFLAGS="${MAKEFLAGS:--j2}" \
  bash -c 'cd "$1"; exec makepkg --noconfirm' bash "$build"
 mapfile -t packages < <(find "$build" -maxdepth 1 -type f -name 'calamares-*-x86_64.pkg.tar.zst' ! -name '*-debug-*')
 [[ ${#packages[@]} == 1 ]] || { echo 'Build precisa produzir exatamente um pacote Calamares.' >&2; exit 1; }
-bash scripts/build-iso.sh "${packages[0]}"
+desktop_packages=$(mktemp -d /var/tmp/granarch-desktop-pkgs.XXXXXXXX)
+python3 scripts/install-desktop-apps.py builder --build-only --output "$desktop_packages"
+mapfile -t desktop_artifacts < <(find "$desktop_packages" -maxdepth 1 -name '*.pkg.tar.zst' ! -name '*-debug-*')
+[[ ${#desktop_artifacts[@]} == 2 ]] || { echo 'Esperados Zen e DiskTree.' >&2; exit 1; }
+bash scripts/build-iso.sh "${packages[0]}" "${desktop_artifacts[@]}"
